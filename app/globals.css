@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+/* Sunset Color Palette - Single Dark Theme */
+:root {
+  /* Sunset Colors */
+  --sunset-navy: #355C7D;
+  --sunset-plum: #725A7A;
+  --sunset-rose: #C56C86;
+  --sunset-coral: #FF7582;
+  
+  /* Single color scheme (dark) */
+  --color-border: #475569;
+  --color-input: #475569;
+  --color-ring: #FF7582;
+  --color-background: #0f172a;
+  --color-foreground: #f1f5f9;
+  --color-primary: #FF7582;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #1e293b;
+  --color-secondary-foreground: #f1f5f9;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #f1f5f9;
+  --color-muted: #1e293b;
+  --color-muted-foreground: #94a3b8;
+  --color-accent: #C56C86;
+  --color-accent-foreground: #ffffff;
+  --color-popover: #1e293b;
+  --color-popover-foreground: #f1f5f9;
+  --color-card: #1e293b;
+  --color-card-foreground: #f1f5f9;
+}
+
+/* Register custom colors with Tailwind v4 */
+@theme {
+  --color-border: var(--color-border);
+  --color-input: var(--color-input);
+  --color-ring: var(--color-ring);
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-foreground: var(--color-secondary-foreground);
+  --color-destructive: var(--color-destructive);
+  --color-destructive-foreground: var(--color-destructive-foreground);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted-foreground);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --color-popover: var(--color-popover);
+  --color-popover-foreground: var(--color-popover-foreground);
+  --color-card: var(--color-card);
+  --color-card-foreground: var(--color-card-foreground);
+  
+  /* Custom Sunset colors */
+  --color-sunset-navy: #355C7D;
+  --color-sunset-plum: #725A7A;
+  --color-sunset-rose: #C56C86;
+  --color-sunset-coral: #FF7582;
+}
+
+/* Font families */
+@layer base {
+  .font-display {
+    font-family: var(--font-playfair), serif;
+  }
+  
+  .font-sans {
+    font-family: var(--font-source-sans), sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-playfair), serif;
+    font-weight: 700;
+  }
+  
+  body {
+    font-family: var(--font-source-sans), sans-serif;
+    background-color: #0f172a;
+    color: #f1f5f9;
+  }
+}
+
+/* Custom utility classes */
+@layer components {
+  .btn-sunset {
+    @apply rounded-full px-8 py-4 font-semibold transition-all duration-200;
+    @apply bg-gradient-to-r from-[#C56C86] to-[#FF7582] hover:from-[#FF7582] hover:to-[#C56C86] text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5;
+  }
+  
+  .btn-outlined-sunset {
+    @apply rounded-full px-8 py-4 font-semibold border-2 transition-all duration-200;
+    @apply border-[#C56C86] text-[#C56C86] hover:border-[#FF7582] hover:text-[#FF7582];
+  }
+  
+  .card-sunset {
+    @apply bg-[#1e293b] text-white rounded-2xl p-8 transition-all duration-200;
+    @apply shadow-md border-2 border-gray-700;
+  }
+  
+  .gradient-sunset {
+    background: linear-gradient(135deg, #355C7D 0%, #725A7A 50%, #C56C86 100%);
+  }
+}
+
+/* Floating Animation for Hero Avatars with Scale */
+@keyframes float-scale {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg) scale(1);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px) rotate(5deg) scale(1.15);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-10px) translateX(-10px) rotate(-5deg) scale(0.9);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translateY(-25px) translateX(5px) rotate(3deg) scale(1.1);
+    opacity: 0.6;
+  }
+}
+
+.animate-float-scale {
+  animation: float-scale 20s ease-in-out infinite;
+}
+
+/* Legacy float animation for backwards compatibility */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px) rotate(5deg);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-10px) translateX(-10px) rotate(-5deg);
+    opacity: 0.4;
+  }
+  75% {
+    transform: translateY(-25px) translateX(5px) rotate(3deg);
+    opacity: 0.6;
+  }
+}
+
+.animate-float {
+  animation: float 20s ease-in-out infinite;
+}

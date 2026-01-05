@@ -1,0 +1,27 @@
+{
+  "technical": [
+    "Explain how you would design a rate limiter for an API",
+    "How would you optimize a slow database query?",
+    "Describe your approach to debugging a production issue",
+    "How would you implement a real-time notification system?",
+    "Explain the differences between horizontal and vertical scaling",
+    "How would you handle authentication in a microservices architecture?"
+  ],
+  "behavioral": [
+    "Tell me about a time you disagreed with a team member",
+    "Describe a project where you had to learn a new technology quickly",
+    "How do you prioritize competing deadlines?",
+    "Tell me about a time you failed and what you learned",
+    "Describe a situation where you had to give difficult feedback",
+    "How do you handle scope creep in a project?"
+  ],
+  "system-design": [
+    "Design a URL shortener like bit.ly",
+    "Design Instagram's newsfeed",
+    "Design a ride-sharing service like Uber",
+    "Design a distributed cache system",
+    "Design a web crawler",
+    "Design a real-time chat application"
+  ]
+}
+

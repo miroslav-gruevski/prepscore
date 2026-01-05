@@ -1,0 +1,53 @@
+{
+  "personas": [
+    {
+      "id": "technical",
+      "name": "Technical Expert",
+      "description": "Deep technical questions, expects specific details and trade-offs",
+      "style": "Analytical, detail-oriented, challenges technical assumptions",
+      "focusAreas": [
+        "Technical accuracy",
+        "System design thinking",
+        "Code quality awareness",
+        "Performance considerations"
+      ]
+    },
+    {
+      "id": "skeptic",
+      "name": "The Skeptic",
+      "description": "Challenges your answers, tests composure under pressure",
+      "style": "Questioning, probing, plays devil's advocate",
+      "focusAreas": [
+        "Handling pressure",
+        "Evidence-based reasoning",
+        "Confidence without arrogance",
+        "Receptiveness to feedback"
+      ]
+    },
+    {
+      "id": "friendly",
+      "name": "The Friendly Interviewer",
+      "description": "Conversational, focuses on culture fit and collaboration",
+      "style": "Warm, encouraging, interested in your story",
+      "focusAreas": [
+        "Team collaboration",
+        "Communication skills",
+        "Cultural fit",
+        "Self-awareness"
+      ]
+    },
+    {
+      "id": "rushed",
+      "name": "The Rushed Manager",
+      "description": "Fast-paced, tests your ability to be concise and prioritize",
+      "style": "Quick, impatient, wants the bottom line first",
+      "focusAreas": [
+        "Conciseness",
+        "Prioritization",
+        "Impact focus",
+        "Adaptability"
+      ]
+    }
+  ]
+}
+

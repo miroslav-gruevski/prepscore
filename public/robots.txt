@@ -1,0 +1,10 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /interview/*/
+Disallow: /auth/
+
+Sitemap: https://prepscore.ai/sitemap.xml
+

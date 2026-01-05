@@ -1,0 +1,172 @@
+// Prisma schema for PrepScore
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Users table
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  interviews    Interview[]
+  progressData  UserProgress?
+  accounts      Account[]
+  sessions      Session[]
+  
+  @@map("users")
+}
+
+// NextAuth Account model
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// NextAuth Session model
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// NextAuth Verification Token model
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+// Interviews table
+model Interview {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Interview metadata
+  roleDescription String    // "Senior React Engineer at Series B"
+  persona         String    // "skeptic", "friendly", "rushed", "technical"
+  question        String    // Selected sample question
+  questionType    String    // "technical", "behavioral"
+  
+  // Recording data
+  videoUrl        String?   // S3/Blob URL
+  audioUrl        String?   // S3/Blob URL
+  transcript      String?   @db.Text // From Deepgram
+  duration        Int       @default(0) // In seconds
+  
+  // Analysis results
+  signalsDetected Signal[]
+  strengths       String[]  // JSON array of feedback
+  improvements    String[]  // JSON array of feedback
+  
+  // Metadata
+  createdAt       DateTime  @default(now())
+  analyzedAt      DateTime?
+  
+  // Relations
+  progressSnapshot ProgressSnapshot?
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@map("interviews")
+}
+
+// Hiring signals (join table for multi-interview tracking)
+model Signal {
+  id          String    @id @default(cuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  
+  // Signal data
+  name        String    // "Problem Framing", "Trade-off Discussion"
+  score       Int       // 0-10
+  definition  String    @db.Text // Explanation of signal
+  
+  @@index([interviewId])
+  @@map("signals")
+}
+
+// User progress tracking (aggregate across interviews)
+model UserProgress {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 5-dimension tracking
+  clarity     Int[]     @default([])     // [6, 7, 8] - trends
+  depth       Int[]     @default([])
+  pressure    Int[]     @default([])
+  rolefit     Int[]     @default([])
+  visibility  Int[]     @default([])
+  
+  // Computed metrics
+  lastUpdated DateTime  @updatedAt
+  totalInterviews Int   @default(0)
+  avgScore    Float     @default(0)
+  
+  @@map("user_progress")
+}
+
+// Snapshot of progress at each interview (for historical trends)
+model ProgressSnapshot {
+  id          String    @id @default(cuid())
+  interviewId String    @unique
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  
+  clarity     Int
+  depth       Int
+  pressure    Int
+  rolefit     Int
+  visibility  Int
+  
+  createdAt   DateTime  @default(now())
+  
+  @@map("progress_snapshots")
+}
+
+// Feedback templates (for consistency)
+model FeedbackTemplate {
+  id        String  @id @default(cuid())
+  signal    String  // "Problem Framing"
+  roleLevel String  // "junior", "senior", "lead"
+  strength  String  @db.Text // Example of strong performance
+  weakness  String  @db.Text // Example of weak performance
+  tip       String  @db.Text // Improvement tip
+  
+  @@unique([signal, roleLevel])
+  @@map("feedback_templates")
+}
+
