@@ -5,7 +5,8 @@ export default function NotFound() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 flex items-center justify-center px-6">
       <div className="max-w-2xl w-full text-center">
         {/* Logo */}
-        <Link href="/" className="inline-flex items-center gap-3 mb-8">
+        <Link href="/" className="inline-flex items-center gap-2 mb-8">
+          <img src="/PrepScore-symbol.svg" alt="" className="w-8 h-8" />
           <span className="text-2xl font-display font-bold bg-gradient-to-r from-sunset-rose to-sunset-coral bg-clip-text text-transparent">
             PrepScore
           </span>

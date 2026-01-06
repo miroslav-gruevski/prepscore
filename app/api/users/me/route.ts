@@ -17,7 +17,7 @@ export async function GET() {
         interviews: {
           take: 5,
           orderBy: { createdAt: "desc" },
-          include: { signalsDetected: true },
+          include: { signals: true },
         },
       },
     })

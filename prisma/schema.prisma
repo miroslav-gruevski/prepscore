@@ -70,7 +70,7 @@ model VerificationToken {
   @@map("verificationtokens")
 }
 
-// Interviews table
+// Interviews table - Updated for multi-question flow
 model Interview {
   id              String    @id @default(cuid())
   userId          String
@@ -79,69 +79,156 @@ model Interview {
   // Interview metadata
   roleDescription String    // "Senior React Engineer at Series B"
   persona         String    // "skeptic", "friendly", "rushed", "technical"
-  question        String    // Selected sample question
-  questionType    String    // "technical", "behavioral"
   
-  // Recording data
-  videoUrl        String?   // S3/Blob URL
-  audioUrl        String?   // S3/Blob URL
-  transcript      String?   @db.Text // From Deepgram
-  duration        Int       @default(0) // In seconds
+  // Status tracking
+  status          String    @default("setup") // setup, in_progress, completed, analyzing, analyzed
+  questionsCount  Int       @default(5)
+  answeredCount   Int       @default(0)
   
-  // Analysis results
-  signalsDetected Signal[]
-  strengths       String[]  // JSON array of feedback
-  improvements    String[]  // JSON array of feedback
-  
-  // Metadata
+  // Timing
   createdAt       DateTime  @default(now())
+  startedAt       DateTime?
+  completedAt     DateTime?
   analyzedAt      DateTime?
   
+  // Overall scores (populated after analysis)
+  overallScore    Float?
+  
   // Relations
+  questions       InterviewQuestion[]
+  analysis        InterviewAnalysis?
+  signals         Signal[]           // Legacy support
   progressSnapshot ProgressSnapshot?
+  
+  // Legacy fields (for backwards compatibility)
+  question        String?   // Single question (old flow)
+  questionType    String?   // Single question type (old flow)
+  videoUrl        String?
+  audioUrl        String?
+  transcript      String?   @db.Text
+  duration        Int       @default(0)
+  strengths       String[]
+  improvements    String[]
   
   @@index([userId])
   @@index([createdAt])
+  @@index([status])
   @@map("interviews")
 }
 
-// Hiring signals (join table for multi-interview tracking)
+// Individual questions within an interview
+model InterviewQuestion {
+  id              String    @id @default(cuid())
+  interviewId     String
+  interview       Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  
+  // Question details
+  questionNumber  Int       // 1-5
+  questionType    String    // technical, behavioral, system_design, leadership, problem_solving
+  questionText    String    @db.Text
+  
+  // Recording data
+  audioUrl        String?   // Stored audio recording
+  transcript      String?   @db.Text // Transcribed text
+  duration        Int?      // Recording duration in seconds
+  
+  // Analysis results (per-question)
+  score           Float?    // 1-10
+  feedback        String?   @db.Text // Detailed feedback for this question
+  strengths       String[]  // What was done well
+  improvements    String[]  // What to improve
+  
+  // Status
+  status          String    @default("pending") // pending, recording, recorded, transcribed, analyzed
+  recordedAt      DateTime?
+  
+  @@unique([interviewId, questionNumber])
+  @@index([interviewId])
+  @@map("interview_questions")
+}
+
+// Comprehensive analysis results
+model InterviewAnalysis {
+  id              String    @id @default(cuid())
+  interviewId     String    @unique
+  interview       Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  
+  // Overall assessment
+  overallScore    Float     // Average across all dimensions
+  overallFeedback String    @db.Text // Summary paragraph
+  verdict         String    // "Strong Hire", "Hire", "Lean Hire", "Lean No Hire", "No Hire"
+  
+  // Universal Skill Scores (1-10)
+  communicationClarity  Float?  // Clear, understandable explanations
+  conciseness           Float?  // Focused, not rambling
+  structure             Float?  // Uses frameworks (STAR, etc.)
+  confidence            Float?  // Speaks with conviction
+  relevance             Float?  // Examples relate to question
+  
+  // Technical Scores (1-10) - for tech roles
+  technicalDepth        Float?  // Deep understanding
+  problemFraming        Float?  // Clarifies requirements
+  systemDesign          Float?  // Scalability thinking
+  codeQuality           Float?  // Best practices
+  
+  // Leadership Scores (1-10) - for senior/management roles
+  leadership            Float?  // Inspires, decides
+  mentorship            Float?  // Develops others
+  strategicThinking     Float?  // Big picture
+  conflictResolution    Float?  // Handles disagreements
+  
+  // Aggregated feedback
+  topStrengths          String[]  // Top 3-5 strengths
+  topImprovements       String[]  // Top 3-5 areas to improve
+  actionItems           String[]  // Specific things to practice
+  
+  // Metadata
+  createdAt             DateTime  @default(now())
+  
+  @@map("interview_analyses")
+}
+
+// Hiring signals (legacy support)
 model Signal {
   id          String    @id @default(cuid())
   interviewId String
   interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
   
-  // Signal data
-  name        String    // "Problem Framing", "Trade-off Discussion"
-  score       Int       // 0-10
-  definition  String    @db.Text // Explanation of signal
+  name        String
+  score       Int
+  definition  String    @db.Text
   
   @@index([interviewId])
   @@map("signals")
 }
 
-// User progress tracking (aggregate across interviews)
+// User progress tracking
 model UserProgress {
   id          String    @id @default(cuid())
   userId      String    @unique
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // 5-dimension tracking
-  clarity     Int[]     @default([])     // [6, 7, 8] - trends
+  // Dimension tracking (trends over time)
+  clarity     Int[]     @default([])
   depth       Int[]     @default([])
   pressure    Int[]     @default([])
   rolefit     Int[]     @default([])
   visibility  Int[]     @default([])
   
+  // New multi-dimensional tracking
+  communication   Float[]   @default([])
+  technical       Float[]   @default([])
+  leadership      Float[]   @default([])
+  
   // Computed metrics
-  lastUpdated DateTime  @updatedAt
-  totalInterviews Int   @default(0)
-  avgScore    Float     @default(0)
+  lastUpdated     DateTime  @updatedAt
+  totalInterviews Int       @default(0)
+  avgScore        Float     @default(0)
   
   @@map("user_progress")
 }
 
-// Snapshot of progress at each interview (for historical trends)
+// Progress snapshot at each interview
 model ProgressSnapshot {
   id          String    @id @default(cuid())
   interviewId String    @unique
@@ -158,16 +245,15 @@ model ProgressSnapshot {
   @@map("progress_snapshots")
 }
 
-// Feedback templates (for consistency)
+// Feedback templates
 model FeedbackTemplate {
   id        String  @id @default(cuid())
-  signal    String  // "Problem Framing"
-  roleLevel String  // "junior", "senior", "lead"
-  strength  String  @db.Text // Example of strong performance
-  weakness  String  @db.Text // Example of weak performance
-  tip       String  @db.Text // Improvement tip
+  signal    String
+  roleLevel String
+  strength  String  @db.Text
+  weakness  String  @db.Text
+  tip       String  @db.Text
   
   @@unique([signal, roleLevel])
   @@map("feedback_templates")
 }
-

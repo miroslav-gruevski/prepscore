@@ -5,19 +5,20 @@ import { CheckCircle2, Sparkles, User, Users, Target, Briefcase, Award, Graduati
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900">
-      {/* Navigation */}
-      <header className="sticky top-0 z-50 bg-gray-900/90 backdrop-blur-md border-b border-gray-800">
+    <div className="min-h-screen gradient-mesh">
+      {/* Fixed Navigation */}
+      <header className="fixed top-0 left-0 right-0 z-50 glass-header">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <Link href="/" className="flex items-center gap-3 group">
-              <span className="text-2xl font-display font-bold bg-gradient-to-r from-sunset-rose to-sunset-coral bg-clip-text text-transparent">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="flex items-center gap-2 group">
+              <img src="/PrepScore-symbol.svg" alt="" className="w-7 h-7" />
+              <span className="text-xl font-display font-bold bg-gradient-to-r from-sunset-rose to-sunset-coral bg-clip-text text-transparent">
                 PrepScore
               </span>
             </Link>
             <div className="flex items-center gap-4">
               <Link href="/dashboard">
-                <button className="px-6 py-2.5 text-sm font-medium text-sunset-rose hover:text-sunset-coral transition-colors">
+                <button className="btn-primary !px-5 !py-2.5 !rounded-xl text-sm press-effect">
                   Get Started
                 </button>
               </Link>
@@ -26,13 +27,16 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* Spacer for fixed header */}
+      <div className="h-16" />
+
       {/* Hero Section */}
       <section className="py-24 px-6 relative overflow-hidden">
         {/* Floating Avatars Background */}
         <FloatingAvatars />
         
-        <div className="max-w-6xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-sunset-rose/10 rounded-full text-sm font-semibold text-sunset-coral mb-10 border border-sunset-rose/20">
+        <div className="max-w-6xl mx-auto text-center relative z-10 animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 badge badge-primary mb-10">
             <Sparkles className="w-4 h-4" />
             AI-Powered Interview Practice
           </div>
@@ -53,7 +57,7 @@ export default function HomePage() {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
             <Link href="/interview/new">
-              <button className="btn-sunset">
+              <button className="btn-primary !px-8 !py-4 !rounded-2xl text-lg hover-glow">
                 <span className="flex items-center gap-2">
                   Start Practicing Now
                   <Sparkles className="w-5 h-5" />
@@ -61,7 +65,7 @@ export default function HomePage() {
               </button>
             </Link>
             <Link href="/dashboard">
-              <button className="btn-outlined-sunset">
+              <button className="btn-outlined !px-8 !py-4 !rounded-2xl text-lg">
                 View Dashboard
               </button>
             </Link>
@@ -74,7 +78,7 @@ export default function HomePage() {
               { text: 'No credit card' },
               { text: 'Instant feedback' },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="flex items-center gap-2 animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
                 <CheckCircle2 className="w-5 h-5 text-sunset-coral" />
                 <span className="font-medium">{item.text}</span>
               </div>
@@ -84,7 +88,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-6 bg-gray-900/50">
+      <section className="py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-6">
@@ -95,7 +99,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-children">
             <FeatureCard
               icon="🎭"
               title="4 Interviewer Personas"
@@ -172,9 +176,9 @@ export default function HomePage() {
               © 2026 PrepScore. Built for practice, not cheating.
             </p>
             <div className="flex gap-8 text-sm text-gray-400">
-              <Link href="#" className="hover:text-sunset-rose transition-colors">Privacy</Link>
-              <Link href="#" className="hover:text-sunset-rose transition-colors">Terms</Link>
-              <Link href="#" className="hover:text-sunset-rose transition-colors">Contact</Link>
+              <Link href="/privacy" className="hover:text-sunset-rose transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-sunset-rose transition-colors">Terms</Link>
+              <Link href="/contact" className="hover:text-sunset-rose transition-colors">Contact</Link>
             </div>
           </div>
         </div>
@@ -185,7 +189,7 @@ export default function HomePage() {
 
 function FeatureCard({ icon, title, description }: { icon: string; title: string; description: string }) {
   return (
-    <div className="card-sunset">
+    <div className="glass-card p-8 hover-lift">
       <div className="text-5xl mb-6">{icon}</div>
       <h3 className="text-2xl font-display font-semibold text-white mb-4">{title}</h3>
       <p className="text-gray-300 leading-relaxed text-lg">{description}</p>

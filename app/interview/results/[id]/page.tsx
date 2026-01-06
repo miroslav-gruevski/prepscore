@@ -2,7 +2,49 @@
 
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, ChevronDown, ChevronUp, Coffee } from 'lucide-react'
+import { 
+  CheckCircle, ChevronDown, ChevronUp, Coffee, 
+  TrendingUp, TrendingDown, Minus, Award,
+  MessageSquare, Brain, Users, Target, Zap,
+  RefreshCw, Share2, Download, ArrowLeft
+} from 'lucide-react'
+import { getQuestionTypeDisplay, getPersonaDisplay } from '@/lib/question-generator'
+
+interface Question {
+  questionNumber: number
+  questionType: string
+  questionText: string
+}
+
+interface QuestionFeedback {
+  questionNumber: number
+  questionType: string
+  questionText: string
+  score: number
+  strengths: string[]
+  improvements: string[]
+  keyTakeaway: string
+  transcript?: string // Transcribed response from the user
+}
+
+interface SkillScore {
+  name: string
+  score: number
+  emoji: string
+  description: string
+  trend: 'up' | 'down' | 'neutral'
+}
+
+interface AnalysisData {
+  overallScore: number
+  verdict: string
+  overallFeedback: string
+  skills: SkillScore[]
+  topStrengths: string[]
+  topImprovements: string[]
+  actionItems: string[]
+  questionFeedback: QuestionFeedback[]
+}
 
 export default function ResultsPage({
   params,
@@ -11,100 +53,131 @@ export default function ResultsPage({
 }) {
   const { id } = use(params)
   const [interview, setInterview] = useState<any>(null)
-  const [transcriptExpanded, setTranscriptExpanded] = useState(false)
+  const [analysis, setAnalysis] = useState<AnalysisData | null>(null)
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set([1]))
   const [customAmount, setCustomAmount] = useState("")
   const [selectedAmount, setSelectedAmount] = useState(9)
 
   useEffect(() => {
-    // Try to get interview data from sessionStorage (if user just completed an interview)
+    // Load interview data from sessionStorage
     const storedInterview = sessionStorage.getItem(`interview_${id}`)
-    let interviewData
     
     if (storedInterview) {
-      // Use stored data if available
       const parsed = JSON.parse(storedInterview)
-      interviewData = {
-        ...parsed,
-        transcript: "Sample transcript would appear here...",
-        analyzedAt: new Date().toISOString(),
-        signalsDetected: [
-          {
-            id: "1",
-            name: "Problem Framing",
-            score: 8,
-            definition: "Strong ability to understand and articulate problem constraints",
-            evidence: "Candidate clearly outlined the requirements and discussed trade-offs between different approaches",
-            evaluation: "Demonstrated excellent problem decomposition skills",
-          },
-          {
-            id: "2",
-            name: "Technical Depth",
-            score: 7,
-            definition: "Deep understanding of technical concepts and implementation details",
-            evidence: "Explained token bucket algorithm and its advantages over sliding window",
-            evaluation: "Good technical knowledge, could have discussed edge cases more",
-          },
-          {
-            id: "3",
-            name: "Communication Clarity",
-            score: 9,
-            definition: "Ability to explain complex ideas clearly and concisely",
-            evidence: "Used clear examples and analogies throughout the explanation",
-            evaluation: "Exceptional communication skills, easy to follow",
-          },
-        ],
-      }
+      setInterview(parsed)
+      
+      // Generate demo analysis based on interview data
+      const demoAnalysis = generateDemoAnalysis(parsed)
+      setAnalysis(demoAnalysis)
     } else {
-      // Fallback to mock data
-      interviewData = {
+      // Fallback demo data
+      const demoInterview = {
         id,
         roleDescription: "Senior React Engineer",
         persona: "technical",
-        question: "How would you design a rate limiter for an API?",
-        questionType: "technical",
-        transcript: "Sample transcript would appear here...",
-        analyzedAt: new Date().toISOString(),
-        signalsDetected: [
-          {
-            id: "1",
-            name: "Problem Framing",
-            score: 8,
-            definition: "Strong ability to understand and articulate problem constraints",
-            evidence: "Candidate clearly outlined the requirements and discussed trade-offs between different approaches",
-            evaluation: "Demonstrated excellent problem decomposition skills",
-          },
-          {
-            id: "2",
-            name: "Technical Depth",
-            score: 7,
-            definition: "Deep understanding of technical concepts and implementation details",
-            evidence: "Explained token bucket algorithm and its advantages over sliding window",
-            evaluation: "Good technical knowledge, could have discussed edge cases more",
-          },
-          {
-            id: "3",
-            name: "Communication Clarity",
-            score: 9,
-            definition: "Ability to explain complex ideas clearly and concisely",
-            evidence: "Used clear examples and analogies throughout the explanation",
-            evaluation: "Exceptional communication skills, easy to follow",
-          },
+        questions: [
+          { questionNumber: 1, questionType: 'technical', questionText: 'Explain the React reconciliation algorithm and how the virtual DOM diffing works.' },
+          { questionNumber: 2, questionType: 'technical', questionText: 'How would you optimize the performance of a React application with slow renders?' },
+          { questionNumber: 3, questionType: 'system_design', questionText: 'Design a real-time notification system that can handle millions of users.' },
+          { questionNumber: 4, questionType: 'behavioral', questionText: 'Tell me about a time you had to resolve a conflict within your team.' },
+          { questionNumber: 5, questionType: 'leadership', questionText: 'How do you approach mentoring junior developers on your team?' },
         ],
       }
+      setInterview(demoInterview)
+      setAnalysis(generateDemoAnalysis(demoInterview))
     }
-    
-    setInterview(interviewData)
   }, [id])
 
-  if (!interview) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 flex items-center justify-center">
-        <div className="text-2xl text-gray-400">Loading...</div>
-      </div>
-    )
+  // Generate demo analysis (in production, this comes from AI)
+  function generateDemoAnalysis(interviewData: any): AnalysisData {
+    const questions = interviewData?.questions || []
+    
+    return {
+      overallScore: 7.4,
+      verdict: "Lean Hire",
+      overallFeedback: "Strong technical foundation with good problem-solving skills. Communication could be more concise, and behavioral answers would benefit from the STAR method. Overall, a solid candidate who would likely succeed in the role with some coaching.",
+      skills: [
+        { name: 'Technical Depth', score: 9, emoji: '💻', description: 'Deep understanding of core concepts', trend: 'up' },
+        { name: 'Problem Framing', score: 8, emoji: '🎯', description: 'Clarifies requirements effectively', trend: 'up' },
+        { name: 'System Design', score: 7, emoji: '🏗️', description: 'Good high-level thinking', trend: 'neutral' },
+        { name: 'Communication', score: 5, emoji: '💬', description: 'Could be more concise', trend: 'down' },
+        { name: 'Conciseness', score: 4, emoji: '⚡', description: 'Answers are too long', trend: 'down' },
+        { name: 'Structure (STAR)', score: 6, emoji: '📋', description: 'Behavioral answers need structure', trend: 'neutral' },
+        { name: 'Confidence', score: 8, emoji: '💪', description: 'Speaks with conviction', trend: 'up' },
+        { name: 'Leadership', score: 7, emoji: '👥', description: 'Shows mentorship qualities', trend: 'neutral' },
+      ],
+      topStrengths: [
+        "Deep understanding of React internals and performance optimization",
+        "Strong problem decomposition - breaks down complex problems effectively",
+        "Good real-world examples from production experience",
+        "Shows genuine passion for mentoring and team growth",
+      ],
+      topImprovements: [
+        "Answers are 2x longer than ideal - practice being more concise",
+        "Use the STAR method for behavioral questions (Situation, Task, Action, Result)",
+        "Add specific metrics to strengthen your examples (%, time saved, users impacted)",
+        "Reduce filler words ('um', 'like') - counted 23 instances",
+      ],
+      actionItems: [
+        "Practice 2-minute answers with a timer",
+        "Prepare 5 STAR-formatted stories before your next interview",
+        "Record yourself and count filler words",
+        "Add quantifiable metrics to your top 3 projects",
+      ],
+      questionFeedback: questions.map((q: Question, idx: number) => ({
+        questionNumber: q.questionNumber,
+        questionType: q.questionType,
+        questionText: q.questionText,
+        score: [8, 9, 7, 5, 7][idx] || 7,
+        strengths: [
+          "Clear explanation of core concepts",
+          "Good use of analogies",
+        ],
+        improvements: [
+          "Could add more specific examples",
+          "Consider edge cases",
+        ],
+        keyTakeaway: [
+          "Solid technical knowledge demonstrated",
+          "Excellent comparison of approaches",
+          "Good architecture thinking, add more details on trade-offs",
+          "Use STAR method - answer was too vague",
+          "Good mentorship examples, add specific growth outcomes",
+        ][idx] || "Good answer overall",
+        transcript: getDemoTranscript(idx),
+      })),
+    }
   }
 
-  const avgScore = interview.signalsDetected.reduce((sum: number, sig: any) => sum + sig.score, 0) / interview.signalsDetected.length
+  // Demo transcripts for testing (in production, these come from Deepgram)
+  function getDemoTranscript(questionIndex: number): string {
+    const transcripts = [
+      "So for this question, I would approach it by first understanding the core requirements and constraints. In my previous role at a Series B startup, I led a similar initiative where we had to balance performance with maintainability. We started by conducting a thorough analysis of the existing system, identified the key bottlenecks using profiling tools, and then implemented a phased rollout strategy. The key was constant communication with stakeholders and iterative improvements based on real user feedback. We ended up reducing our bundle size by about 40% and improving Time to Interactive by 2 seconds.",
+      "That's a great question. When I think about system design at scale, I always start with the fundamentals: what are the access patterns, what's the expected load, and what are the consistency requirements? For this particular scenario, I would recommend a microservices architecture with event-driven communication. We'd use something like Kafka or RabbitMQ for decoupling, implement caching at multiple levels with Redis, and ensure we have proper monitoring and alerting in place. I've done this before at my current company where we handle about 10 million daily active users.",
+      "In my experience, the most effective way to handle this situation is through clear communication and empathy. I remember a time when I had to navigate a disagreement between two senior team members about the technical direction of a project. I scheduled individual one-on-ones first to understand each perspective fully, then facilitated a collaborative session where we could align on shared goals. By focusing on the user outcomes rather than technical preferences, we reached a consensus. The outcome was actually better than either initial proposal and both engineers felt heard.",
+      "I'm really passionate about mentoring because I believe it creates a multiplier effect for the entire team. My approach involves setting up regular one-on-ones, creating stretch assignments that push people slightly outside their comfort zone, and always providing context for the 'why' behind decisions. I've seen three junior developers grow into mid-level engineers and one into a technical lead using this method. I also encourage them to present at team meetings and take ownership of small features end-to-end.",
+      "When it comes to this type of challenge, I take a data-driven approach. First, I establish baseline metrics and identify the critical path. Then I use profiling tools to pinpoint the actual bottlenecks rather than assuming where the problems are. In one recent project, everyone thought the database was the issue, but it turned out to be unnecessary re-renders in our React components. We achieved a 60% reduction in load time by implementing React.memo strategically, optimizing our database queries, and adding a CDN layer for static assets.",
+    ]
+    return transcripts[questionIndex] || transcripts[0]
+  }
+
+  const toggleQuestion = (num: number) => {
+    setExpandedQuestions(prev => {
+      const next = new Set(prev)
+      if (next.has(num)) {
+        next.delete(num)
+      } else {
+        next.add(num)
+      }
+      return next
+    })
+  }
+
+  const handleDonate = () => {
+    const amount = customAmount || selectedAmount
+    const paypalLink = `https://www.paypal.com/paypalme/MiroslavGruevski/${amount}`
+    window.open(paypalLink, '_blank')
+  }
 
   const getScoreColor = (score: number) => {
     if (score >= 8) return 'text-green-400'
@@ -113,33 +186,176 @@ export default function ResultsPage({
   }
 
   const getScoreBg = (score: number) => {
-    if (score >= 8) return 'bg-green-900/20 border-green-800'
-    if (score >= 6) return 'bg-yellow-900/20 border-yellow-800'
-    return 'bg-red-900/20 border-red-800'
+    if (score >= 8) return 'bg-green-500'
+    if (score >= 6) return 'bg-yellow-500'
+    return 'bg-red-500'
   }
 
-  const handleDonate = () => {
-    const amount = customAmount || selectedAmount
-    // PayPal donation link
-    const paypalLink = `https://www.paypal.com/paypalme/MiroslavGruevski/${amount}`
-    window.open(paypalLink, '_blank')
+  const getVerdictStyle = (verdict: string) => {
+    switch (verdict) {
+      case 'Strong Hire':
+        return 'bg-green-500/20 text-green-400 border-green-500'
+      case 'Hire':
+        return 'bg-green-500/10 text-green-400 border-green-500/50'
+      case 'Lean Hire':
+        return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/50'
+      case 'Lean No Hire':
+        return 'bg-orange-500/10 text-orange-400 border-orange-500/50'
+      case 'No Hire':
+        return 'bg-red-500/10 text-red-400 border-red-500/50'
+      default:
+        return 'bg-gray-500/10 text-gray-400 border-gray-500/50'
+    }
   }
+
+  const getTrendIcon = (trend: 'up' | 'down' | 'neutral') => {
+    switch (trend) {
+      case 'up':
+        return <TrendingUp className="w-4 h-4 text-green-400" />
+      case 'down':
+        return <TrendingDown className="w-4 h-4 text-red-400" />
+      default:
+        return <Minus className="w-4 h-4 text-gray-400" />
+    }
+  }
+
+  if (!interview || !analysis) {
+    return (
+      <div className="min-h-screen gradient-mesh">
+        {/* Fixed Skeleton Header */}
+        <header className="fixed top-0 left-0 right-0 z-50 glass-header">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-4 bg-gray-700 rounded animate-pulse" />
+                <div className="w-px h-6 bg-gray-700 hidden sm:block" />
+                <div className="w-24 h-6 bg-gray-700 rounded animate-pulse" />
+              </div>
+              <div className="w-32 h-9 bg-gray-700 rounded-lg animate-pulse" />
+            </div>
+          </div>
+        </header>
+
+        {/* Spacer for fixed header */}
+        <div className="h-16" />
+
+        <main id="main-content" className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
+          {/* Skeleton Title */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-full mb-4">
+              <div className="w-5 h-5 bg-gray-700 rounded-full animate-pulse" />
+              <div className="w-40 h-4 bg-gray-700 rounded animate-pulse" />
+            </div>
+            <div className="w-64 h-8 bg-gray-700 rounded mx-auto mb-2 animate-pulse" />
+            <div className="w-48 h-4 bg-gray-700 rounded mx-auto animate-pulse" />
+          </div>
+
+          {/* Skeleton Overall Score */}
+          <div className="bg-gray-800/50 rounded-2xl p-8 mb-8 border border-gray-700">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="text-center md:text-left">
+                <div className="w-32 h-4 bg-gray-700 rounded mb-3 animate-pulse" />
+                <div className="flex items-baseline gap-2 mb-3">
+                  <div className="w-20 h-16 bg-gray-700 rounded animate-pulse" />
+                  <div className="w-8 h-6 bg-gray-700 rounded animate-pulse" />
+                </div>
+                <div className="w-24 h-8 bg-gray-700 rounded-full animate-pulse" />
+              </div>
+              <div className="flex-1 max-w-md">
+                <div className="space-y-2">
+                  <div className="w-full h-4 bg-gray-700 rounded animate-pulse" />
+                  <div className="w-full h-4 bg-gray-700 rounded animate-pulse" />
+                  <div className="w-3/4 h-4 bg-gray-700 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Skeleton Skills Breakdown */}
+          <div className="bg-gray-800/50 rounded-2xl p-8 mb-8 border border-gray-700">
+            <div className="flex items-center gap-2 mb-6">
+              <div className="w-6 h-6 bg-gray-700 rounded animate-pulse" />
+              <div className="w-40 h-6 bg-gray-700 rounded animate-pulse" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="flex items-center gap-4 p-4 bg-gray-900/50 rounded-xl">
+                  <div className="w-10 h-10 bg-gray-700 rounded-lg animate-pulse" />
+                  <div className="flex-1">
+                    <div className="flex justify-between mb-2">
+                      <div className="w-24 h-4 bg-gray-700 rounded animate-pulse" />
+                      <div className="w-12 h-4 bg-gray-700 rounded animate-pulse" />
+                    </div>
+                    <div className="w-full h-2 bg-gray-700 rounded-full animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Skeleton Strengths & Improvements */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {[1, 2].map((section) => (
+              <div key={section} className="bg-gray-800/50 rounded-2xl p-6 border border-gray-700">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-6 h-6 bg-gray-700 rounded animate-pulse" />
+                  <div className="w-32 h-5 bg-gray-700 rounded animate-pulse" />
+                </div>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((item) => (
+                    <div key={item} className="flex items-start gap-3">
+                      <div className="w-5 h-5 bg-gray-700 rounded-full animate-pulse flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="w-full h-4 bg-gray-700 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Loading indicator */}
+          <div className="text-center py-8">
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-gray-800 rounded-full">
+              <div className="w-5 h-5 border-2 border-sunset-coral border-t-transparent rounded-full animate-spin" />
+              <span className="text-gray-400">Analyzing your interview responses...</span>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  const personaInfo = getPersonaDisplay(interview.persona)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gray-900/90 backdrop-blur-md border-b border-gray-800">
+    <div className="min-h-screen gradient-mesh">
+      {/* Fixed Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 glass-header">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <Link href="/" className="flex items-center gap-3 group">
-              <span className="text-2xl font-display font-bold bg-gradient-to-r from-sunset-rose to-sunset-coral bg-clip-text text-transparent">
-                PrepScore
-              </span>
-            </Link>
+          <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
-              <Link href="/dashboard">
-                <button className="px-6 py-2.5 text-sm font-medium text-sunset-rose hover:text-sunset-coral transition-colors">
-                  Dashboard
+              <Link 
+                href="/dashboard" 
+                className="btn-ghost !px-3 !py-2 flex items-center gap-2 text-sm press-effect"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Back</span>
+              </Link>
+              <div className="w-px h-6 bg-white/10 hidden sm:block" />
+              <Link href="/" className="flex items-center gap-2">
+                <img src="/PrepScore-symbol.svg" alt="" className="w-7 h-7" />
+                <span className="text-xl font-display font-bold bg-gradient-to-r from-sunset-rose to-sunset-coral bg-clip-text text-transparent">
+                  PrepScore
+                </span>
+              </Link>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link href="/interview/new">
+                <button className="btn-primary !px-4 !py-2.5 !rounded-xl text-sm flex items-center gap-2 press-effect">
+                  <RefreshCw className="w-4 h-4" />
+                  <span className="hidden sm:inline">Practice Again</span>
                 </button>
               </Link>
             </div>
@@ -147,146 +363,256 @@ export default function ResultsPage({
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 lg:px-8 py-12">
-        {/* Results Header */}
-        <div className="mb-12">
-          <div className="flex items-center gap-4 mb-4">
-            <CheckCircle2 className="w-10 h-10 text-green-500" />
-            <h1 className="text-5xl font-display font-bold text-white">
-              Interview Analysis Complete
-            </h1>
+      {/* Spacer for fixed header */}
+      <div className="h-16" />
+
+      <main id="main-content" className="max-w-5xl mx-auto px-6 lg:px-8 py-8">
+        {/* Title Section */}
+        <div className="text-center mb-8 animate-fade-in-up">
+          <div className="inline-flex items-center gap-2 px-4 py-2 badge badge-success mb-4 animate-bounce-in">
+            <CheckCircle className="w-4 h-4" />
+            <span className="font-medium">Interview Analysis Complete</span>
           </div>
-          <p className="text-xl text-gray-400">
-            {interview.roleDescription} • {interview.persona} interviewer
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Analyzed on {new Date(interview.analyzedAt).toLocaleString()}
+          <h1 className="text-3xl font-display font-bold text-white mb-2">
+              {interview.roleDescription}
+          </h1>
+          <p className="text-gray-400">
+            {personaInfo.emoji} {personaInfo.label} Interview • {new Date().toLocaleDateString()}
           </p>
         </div>
 
         {/* Overall Score Card */}
-        <div className="bg-gradient-to-br from-sunset-rose/10 to-sunset-coral/10 backdrop-blur-sm rounded-2xl p-12 mb-12 border-2 border-sunset-rose/30 shadow-xl">
-          <div className="text-center">
-            <p className="text-base font-medium text-gray-400 mb-3">Overall Performance</p>
-            <p className={`text-7xl font-display font-bold mb-3 ${getScoreColor(avgScore)}`}>
-              {avgScore.toFixed(1)}/10
-            </p>
-            <p className="text-gray-400 text-lg">
-              {avgScore >= 8 ? "Excellent performance! 🎉" : avgScore >= 6 ? "Good job! Keep practicing 💪" : "Room for improvement 📈"}
-            </p>
+        <div className="glass-card p-8 mb-8 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-center md:text-left">
+              <p className="text-gray-400 text-sm mb-2">Overall Performance</p>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-6xl font-bold ${getScoreColor(analysis.overallScore)}`}>
+                  {analysis.overallScore.toFixed(1)}
+                </span>
+                <span className="text-2xl text-gray-500">/10</span>
+              </div>
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border mt-4 ${getVerdictStyle(analysis.verdict)}`}>
+                <Award className="w-5 h-5" />
+                <span className="font-semibold">{analysis.verdict}</span>
+              </div>
+            </div>
+            <div className="flex-1 max-w-md">
+              <p className="text-gray-300 text-sm leading-relaxed">
+                {analysis.overallFeedback}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Question Card */}
-        <div className="bg-gray-800/70 backdrop-blur-sm rounded-2xl p-8 mb-12 border-2 border-gray-700 shadow-lg">
-          <h2 className="text-xl font-display font-semibold text-white mb-3">
-            Interview Question
+        {/* Skills Breakdown */}
+        <div className="glass-card p-6 mb-8 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
+          <h2 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
+            <Brain className="w-5 h-5 text-sunset-coral" />
+            Skills Breakdown
           </h2>
-          <p className="text-gray-300 italic text-lg">
-            "{interview.question}"
-          </p>
-        </div>
-
-        {/* Signals Detected */}
-        <div className="mb-12">
-          <h2 className="text-3xl font-display font-bold text-white mb-8">
-            Hiring Signals Detected
-          </h2>
-          <div className="space-y-8">
-            {interview.signalsDetected.map((signal: any) => (
-              <div
-                key={signal.id}
-                className={`rounded-2xl p-8 border-2 shadow-lg ${getScoreBg(signal.score)}`}
-              >
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-display font-semibold text-white mb-2">
-                      {signal.name}
-                    </h3>
-                    <p className="text-base text-gray-400 italic">
-                      {signal.definition}
-                    </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
+            {analysis.skills.map((skill) => (
+              <div key={skill.name} className="flex items-center gap-4 p-4 glass-card-subtle hover-lift">
+                <span className="text-2xl">{skill.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-white font-medium">{skill.name}</span>
+                    <div className="flex items-center gap-2">
+                      {getTrendIcon(skill.trend)}
+                      <span className={`font-bold ${getScoreColor(skill.score)}`}>
+                        {skill.score}/10
+                      </span>
+                    </div>
                   </div>
-                  <div className={`text-4xl font-display font-bold ml-6 ${getScoreColor(signal.score)}`}>
-                    {signal.score}/10
+                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-700 ${getScoreBg(skill.score)}`}
+                      style={{ width: `${skill.score * 10}%` }}
+                    />
                   </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                      Evidence
-                    </p>
-                    <p className="text-gray-300 bg-gray-900/30 rounded-lg p-4 text-base">
-                      {signal.evidence}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                      Evaluation
-                    </p>
-                    <p className="text-gray-300 bg-gray-900/30 rounded-lg p-4 text-base">
-                      {signal.evaluation}
-                    </p>
-                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{skill.description}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Transcript Section */}
-        <div className="bg-gray-800/70 backdrop-blur-sm rounded-2xl border-2 border-gray-700 shadow-lg overflow-hidden mb-12">
-          <button
-            onClick={() => setTranscriptExpanded(!transcriptExpanded)}
-            className="w-full p-8 flex items-center justify-between hover:bg-gray-700/50 transition-colors"
-          >
-            <h2 className="text-2xl font-display font-semibold text-white">
-              Your Response Transcript
+        {/* Strengths & Improvements */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+          {/* Strengths */}
+          <div className="glass-card !border-green-500/20 p-6">
+            <h2 className="text-xl font-display font-bold text-white mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-green-400" />
+              💪 Strengths
             </h2>
-            {transcriptExpanded ? (
-              <ChevronUp className="w-7 h-7 text-sunset-rose" />
-            ) : (
-              <ChevronDown className="w-7 h-7 text-sunset-rose" />
-            )}
-          </button>
+            <ul className="space-y-3 stagger-children">
+              {analysis.topStrengths.map((strength, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-300 text-sm">{strength}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-          {transcriptExpanded && (
-            <div className="px-8 pb-8 border-t border-gray-700">
-              <div className="mt-6 p-6 bg-gray-900 rounded-lg">
-                <p className="text-gray-300 whitespace-pre-wrap font-mono text-base">
-                  {interview.transcript}
-                </p>
+          {/* Improvements */}
+          <div className="glass-card !border-orange-500/20 p-6">
+            <h2 className="text-xl font-display font-bold text-white mb-4 flex items-center gap-2">
+              <Target className="w-5 h-5 text-orange-400" />
+              📈 Areas to Improve
+            </h2>
+            <ul className="space-y-3 stagger-children">
+              {analysis.topImprovements.map((improvement, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <Zap className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-gray-300 text-sm">{improvement}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Action Items */}
+        <div className="bg-sunset-coral/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-sunset-coral/20">
+          <h2 className="text-xl font-display font-bold text-white mb-4 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-sunset-coral" />
+            🎯 Action Items for Next Interview
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {analysis.actionItems.map((item, idx) => (
+              <div key={idx} className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-lg">
+                <span className="w-6 h-6 rounded-full bg-sunset-coral/20 text-sunset-coral text-sm font-bold flex items-center justify-center">
+                  {idx + 1}
+                </span>
+                <span className="text-gray-300 text-sm">{item}</span>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
+        </div>
+
+        {/* Question-by-Question Feedback */}
+        <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-gray-700">
+          <h2 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-sunset-coral" />
+            Question-by-Question Feedback
+          </h2>
+          <div className="space-y-3">
+            {analysis.questionFeedback.map((qf) => {
+              const qInfo = getQuestionTypeDisplay(qf.questionType as any)
+              const isExpanded = expandedQuestions.has(qf.questionNumber)
+              
+              return (
+                <div key={qf.questionNumber} className="border border-gray-700 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => toggleQuestion(qf.questionNumber)}
+                    className="w-full flex items-center justify-between p-4 bg-gray-900/50 hover:bg-gray-900/70 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${getScoreBg(qf.score)} text-white`}>
+                        {qf.score}
+                      </span>
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <span>{qInfo.emoji}</span>
+                          <span className="text-white font-medium">Q{qf.questionNumber}: {qInfo.label}</span>
+                        </div>
+                        <p className="text-gray-500 text-sm truncate max-w-md">
+                          {qf.questionText}
+                        </p>
+                      </div>
+                    </div>
+                    {isExpanded ? (
+                      <ChevronUp className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
+                  
+                  {isExpanded && (
+                    <div className="p-4 bg-gray-900/30 border-t border-gray-700 space-y-4">
+                      {/* Question */}
+                      <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                        <p className="text-blue-400 text-xs font-medium mb-1 uppercase tracking-wider">Question Asked</p>
+                        <p className="text-gray-300 text-sm">"{qf.questionText}"</p>
+                      </div>
+                      
+                      {/* Transcript - Your Response */}
+                      {qf.transcript && (
+                        <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-600/50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <MessageSquare className="w-4 h-4 text-purple-400" />
+                            <p className="text-purple-400 text-xs font-medium uppercase tracking-wider">Your Response (Transcribed)</p>
+                          </div>
+                          <p className="text-gray-300 text-sm leading-relaxed">
+                            {qf.transcript}
+                          </p>
+                          <p className="text-gray-500 text-xs mt-2">
+                            {qf.transcript.split(' ').length} words • ~{Math.ceil(qf.transcript.split(' ').length / 150)} min speaking time
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Feedback Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-3 bg-green-500/5 rounded-lg border border-green-500/20">
+                          <h4 className="text-green-400 text-sm font-medium mb-2 flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4" />
+                            What You Did Well
+                          </h4>
+                          <ul className="space-y-1">
+                            {qf.strengths.map((s, i) => (
+                              <li key={i} className="text-gray-400 text-sm">• {s}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="p-3 bg-orange-500/5 rounded-lg border border-orange-500/20">
+                          <h4 className="text-orange-400 text-sm font-medium mb-2 flex items-center gap-2">
+                            <Zap className="w-4 h-4" />
+                            Room for Improvement
+                          </h4>
+                          <ul className="space-y-1">
+                            {qf.improvements.map((imp, i) => (
+                              <li key={i} className="text-gray-400 text-sm">• {imp}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                      
+                      {/* Key Takeaway */}
+                      <div className="p-3 bg-sunset-coral/10 rounded-lg border border-sunset-coral/20">
+                        <p className="text-sunset-coral text-sm">
+                          💡 <strong>Key Takeaway:</strong> {qf.keyTakeaway}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* Donation Section */}
-        <div className="bg-gradient-to-br from-sunset-rose/10 to-sunset-coral/10 backdrop-blur-sm rounded-2xl p-10 mb-12 border-2 border-sunset-rose/30 shadow-xl">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-display font-bold text-white mb-4">
+        <div className="bg-gradient-to-br from-sunset-rose/10 to-sunset-coral/10 backdrop-blur-sm rounded-2xl p-8 mb-8 border-2 border-sunset-rose/30">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-display font-bold text-white mb-2">
               ☕ Buy us a coffee?
             </h2>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-              If PrepScore helped you, consider supporting us! Your donation helps keep this tool free and continuously improving.
+            <p className="text-gray-400">
+              If PrepScore helped you, consider supporting us! Your donation helps keep this tool free.
             </p>
           </div>
 
-          {/* Quick Amount Selection */}
-          <div className="flex flex-wrap justify-center gap-4 mb-6">
+          <div className="flex flex-wrap justify-center gap-3 mb-6">
             {[5, 9, 15, 25].map((amount) => (
               <button
                 key={amount}
-                onClick={() => {
-                  setSelectedAmount(amount)
-                  setCustomAmount("")
-                }}
-                className={`px-8 py-4 rounded-full font-semibold text-lg transition-all ${
+                onClick={() => { setSelectedAmount(amount); setCustomAmount("") }}
+                className={`px-6 py-3 rounded-full font-semibold transition-all ${
                   selectedAmount === amount && !customAmount
-                    ? "bg-gradient-to-r from-sunset-rose to-sunset-coral text-white shadow-lg scale-105"
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                    ? 'bg-gradient-to-r from-sunset-rose to-sunset-coral text-white'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
               >
                 ${amount}
@@ -294,49 +620,44 @@ export default function ResultsPage({
             ))}
           </div>
 
-          {/* Custom Amount */}
-          <div className="max-w-md mx-auto mb-8">
-            <label className="block text-base font-semibold text-gray-300 mb-3 text-center">
-              Or enter custom amount:
-            </label>
-            <div className="relative">
-              <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 text-lg">$</span>
+          <div className="max-w-xs mx-auto mb-6">
+            <div className="flex items-center gap-2 bg-gray-800 rounded-xl px-4 py-3 border border-gray-700">
+              <span className="text-gray-400">$</span>
               <input
                 type="number"
-                min="1"
-                placeholder="Enter amount"
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
-                className="w-full pl-12 pr-5 py-4 bg-gray-800 border-2 border-gray-700 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-sunset-rose focus:border-transparent transition-all text-lg placeholder-gray-500"
+                placeholder="Custom amount"
+                className="flex-1 bg-transparent text-white outline-none"
               />
             </div>
           </div>
 
-          {/* Donate Button */}
           <div className="text-center">
             <button
               onClick={handleDonate}
-              className="btn-sunset inline-flex items-center gap-2"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-sunset-rose to-sunset-coral text-white rounded-xl font-semibold hover:shadow-lg transition-all"
             >
               <Coffee className="w-5 h-5" />
               Donate via PayPal
             </button>
-            <p className="text-sm text-gray-400 mt-4">
+            <p className="text-gray-500 text-sm mt-3">
               Secure payment through PayPal • No account required
             </p>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-6 justify-center">
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Link href="/interview/new">
-            <button className="btn-sunset">
-              Practice Another Interview
+            <button className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-sunset-rose to-sunset-coral text-white rounded-xl font-semibold hover:shadow-lg transition-all">
+              <RefreshCw className="w-5 h-5" />
+              Practice Again
             </button>
           </Link>
           <Link href="/dashboard">
-            <button className="btn-outlined-sunset">
-              Back to Dashboard
+            <button className="flex items-center justify-center gap-2 px-8 py-4 border-2 border-gray-700 text-gray-300 rounded-xl font-semibold hover:bg-gray-800 transition-all">
+              View All Sessions
             </button>
           </Link>
         </div>
