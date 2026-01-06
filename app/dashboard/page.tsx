@@ -586,7 +586,7 @@ function InterviewCard({
   }
 
   return (
-    <div className={`glass-card-subtle hover:border-white/20 transition-all duration-300 hover-lift ${compact ? 'p-4' : 'p-5'}`}>
+    <div className={`glass-card-subtle hover:border-white/20 transition-all duration-300 hover-lift overflow-visible ${compact ? 'p-4' : 'p-5'} ${isMenuOpen ? 'z-30 relative' : ''}`}>
       <div className="flex items-center gap-4">
         {/* Persona emoji */}
         <span className="text-2xl flex-shrink-0">
@@ -634,10 +634,10 @@ function InterviewCard({
           {isMenuOpen && (
             <>
               <div 
-                className="fixed inset-0 z-10" 
+                className="fixed inset-0 z-40" 
                 onClick={() => setOpenMenu(null)}
               />
-              <div className="absolute right-0 mt-1 w-44 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 overflow-hidden">
+              <div className="absolute right-0 mt-1 w-44 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden">
                 <Link 
                   href={`/interview/results/${interview.id}`}
                   className="flex items-center gap-2 px-4 py-2.5 hover:bg-gray-700 transition-colors text-gray-300 text-sm"

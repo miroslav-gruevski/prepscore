@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { 
-  CheckCircle, ChevronDown, ChevronUp, Coffee, 
+  CheckCircle, ChevronDown, ChevronUp, 
   TrendingUp, TrendingDown, Minus, Award,
   MessageSquare, Brain, Users, Target, Zap,
   RefreshCw, Share2, Download, ArrowLeft
@@ -55,8 +55,7 @@ export default function ResultsPage({
   const [interview, setInterview] = useState<any>(null)
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null)
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set([1]))
-  const [customAmount, setCustomAmount] = useState("")
-  const [selectedAmount, setSelectedAmount] = useState(9)
+  const [selectedAmount, setSelectedAmount] = useState(5)
 
   useEffect(() => {
     // Load interview data from sessionStorage
@@ -174,8 +173,7 @@ export default function ResultsPage({
   }
 
   const handleDonate = () => {
-    const amount = customAmount || selectedAmount
-    const paypalLink = `https://www.paypal.com/paypalme/MiroslavGruevski/${amount}`
+    const paypalLink = `https://www.paypal.com/paypalme/MiroslavGruevski/${selectedAmount}`
     window.open(paypalLink, '_blank')
   }
 
@@ -594,23 +592,17 @@ export default function ResultsPage({
         </div>
 
         {/* Donation Section */}
-        <div className="bg-gradient-to-br from-sunset-rose/10 to-sunset-coral/10 backdrop-blur-sm rounded-2xl p-8 mb-8 border-2 border-sunset-rose/30">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-display font-bold text-white mb-2">
-              ☕ Buy us a coffee?
-            </h2>
-            <p className="text-gray-400">
-              If PrepScore helped you, consider supporting us! Your donation helps keep this tool free.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-3 mb-6">
-            {[5, 9, 15, 25].map((amount) => (
+        <div className="glass-card-subtle p-5 mb-8">
+          <p className="text-gray-400 text-sm text-center mb-4">
+            ☕ If PrepScore helped you, consider buying us a coffee
+          </p>
+          <div className="flex flex-wrap justify-center gap-2 mb-4">
+            {[3, 5, 10, 25].map((amount) => (
               <button
                 key={amount}
-                onClick={() => { setSelectedAmount(amount); setCustomAmount("") }}
-                className={`px-6 py-3 rounded-full font-semibold transition-all ${
-                  selectedAmount === amount && !customAmount
+                onClick={() => setSelectedAmount(amount)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  selectedAmount === amount
                     ? 'bg-gradient-to-r from-sunset-rose to-sunset-coral text-white'
                     : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                 }`}
@@ -619,44 +611,26 @@ export default function ResultsPage({
               </button>
             ))}
           </div>
-
-          <div className="max-w-xs mx-auto mb-6">
-            <div className="flex items-center gap-2 bg-gray-800 rounded-xl px-4 py-3 border border-gray-700">
-              <span className="text-gray-400">$</span>
-              <input
-                type="number"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                placeholder="Custom amount"
-                className="flex-1 bg-transparent text-white outline-none"
-              />
-            </div>
-          </div>
-
           <div className="text-center">
             <button
               onClick={handleDonate}
-              className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-sunset-rose to-sunset-coral text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition-all border border-gray-700"
             >
-              <Coffee className="w-5 h-5" />
-              Donate via PayPal
+              Donate ${selectedAmount} via PayPal
             </button>
-            <p className="text-gray-500 text-sm mt-3">
-              Secure payment through PayPal • No account required
-            </p>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Link href="/interview/new">
-            <button className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-sunset-rose to-sunset-coral text-white rounded-xl font-semibold hover:shadow-lg transition-all">
+        <div className="flex flex-col sm:flex-row justify-center gap-3">
+          <Link href="/interview/new" className="w-full sm:w-auto">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-sunset-rose to-sunset-coral text-white rounded-xl font-semibold hover:shadow-lg transition-all">
               <RefreshCw className="w-5 h-5" />
               Practice Again
             </button>
           </Link>
-          <Link href="/dashboard">
-            <button className="flex items-center justify-center gap-2 px-8 py-4 border-2 border-gray-700 text-gray-300 rounded-xl font-semibold hover:bg-gray-800 transition-all">
+          <Link href="/dashboard" className="w-full sm:w-auto">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 border-2 border-gray-700 text-gray-300 rounded-xl font-semibold hover:bg-gray-800 transition-all">
               View All Sessions
             </button>
           </Link>
