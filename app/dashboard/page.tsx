@@ -35,11 +35,17 @@ export default function DashboardPage() {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; interview: Interview | null }>({ open: false, interview: null })
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  
+  // Determine if user is authenticated or in demo mode
+  const isAuthenticated = status === "authenticated" && session?.user
+  const isSessionLoading = status === "loading"
+  
   const user = {
-    name: session?.user?.name || "Demo User",
-    email: session?.user?.email || "demo@prepscore.app",
-    image: session?.user?.image || null,
+    name: isAuthenticated ? (session.user.name || "User") : "Demo User",
+    email: isAuthenticated ? (session.user.email || "") : "demo@prepscore.app",
+    image: isAuthenticated ? session.user.image : null,
+    isDemo: !isAuthenticated,
   }
   const userMenuRef = useRef<HTMLDivElement>(null)
 
@@ -221,7 +227,12 @@ export default function DashboardPage() {
                   <div className="absolute right-0 mt-3 w-64 glass-dropdown z-[70] overflow-hidden animate-scale-in">
                       {/* User Info */}
                       <div className="px-4 py-3 border-b border-white/10">
-                        <p className="font-medium text-white">{user.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-white">{user.name}</p>
+                          {user.isDemo && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded">Demo</span>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-400">{user.email}</p>
                       </div>
                       
@@ -249,18 +260,29 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       
-                      {/* Logout */}
+                      {/* Sign In (for demo users) or Sign Out (for authenticated users) */}
                       <div className="border-t border-white/10 py-2">
-                        <button
-                          onClick={() => { 
-                            setUserMenuOpen(false); 
-                            signOut({ callbackUrl: '/' }); 
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-red-400 hover:bg-red-500/10 transition-colors text-sm"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          Sign Out
-                        </button>
+                        {user.isDemo ? (
+                          <Link
+                            href="/auth/signin"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-green-400 hover:bg-green-500/10 transition-colors text-sm"
+                          >
+                            <User className="w-4 h-4" />
+                            Sign In with Google
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => { 
+                              setUserMenuOpen(false); 
+                              signOut({ callbackUrl: '/auth/signin' }); 
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-red-400 hover:bg-red-500/10 transition-colors text-sm"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Sign Out
+                          </button>
+                        )}
                       </div>
                     </div>
                 )}
@@ -275,12 +297,36 @@ export default function DashboardPage() {
 
       <main id="main-content" className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
         {/* Welcome Section - More compact */}
+        {/* Demo Mode Banner */}
+        {user.isDemo && (
+          <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-amber-200 font-medium text-sm">You&apos;re in Demo Mode</p>
+                <p className="text-amber-400/70 text-xs">Sign in to save your progress and access all features</p>
+              </div>
+            </div>
+            <Link 
+              href="/auth/signin"
+              className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-sm font-medium rounded-lg transition-colors"
+            >
+              Sign In
+            </Link>
+          </div>
+        )}
+
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-display font-bold text-white mb-2">
-            Welcome back, {user.name.split(' ')[0]}! 👋
+            Welcome{user.isDemo ? '' : ' back'}, {user.name.split(' ')[0]}! 👋
           </h1>
           <p className="text-gray-400">
-            Track your progress and continue practicing
+            {user.isDemo 
+              ? 'Try out PrepScore with demo data. Sign in to save your progress!' 
+              : 'Track your progress and continue practicing'
+            }
           </p>
         </div>
 

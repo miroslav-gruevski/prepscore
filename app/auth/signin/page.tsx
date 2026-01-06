@@ -1,10 +1,46 @@
 'use client'
 
-import { signIn } from "next-auth/react"
+import { signIn, useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
 export default function SignInPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  // Redirect to dashboard if already signed in
+  useEffect(() => {
+    if (status === "authenticated" && session?.user) {
+      router.push("/dashboard")
+    }
+  }, [session, status, router])
+
+  // Show loading while checking session
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen gradient-mesh flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-3 border-sunset-coral/30 border-t-sunset-coral rounded-full animate-spin" />
+          <div className="text-gray-400">Checking session...</div>
+        </div>
+      </div>
+    )
+  }
+
+  // If already authenticated, show redirect message
+  if (status === "authenticated") {
+    return (
+      <div className="min-h-screen gradient-mesh flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-3 border-sunset-coral/30 border-t-sunset-coral rounded-full animate-spin" />
+          <div className="text-gray-400">Redirecting to dashboard...</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen gradient-mesh flex items-center justify-center px-4">
       <div className="glass-card p-8 w-full max-w-md">
