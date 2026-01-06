@@ -71,8 +71,10 @@ export default function ResultsPage({
 
   useEffect(() => {
     async function loadInterviewData() {
-      // First try to fetch from API (for real interviews)
-      if (!id.startsWith('demo_')) {
+      const isDemoId = id.startsWith('demo_') || id.startsWith('demo-')
+      
+      // For real interview IDs, fetch from API
+      if (!isDemoId) {
         try {
           const response = await fetch(`/api/interviews/${id}/results`)
           if (response.ok) {
@@ -87,18 +89,18 @@ export default function ResultsPage({
                 questions: dbInterview.questions,
               })
               
-              // Use real analysis if available, otherwise generate demo
+              // Use real analysis if available
               if (dbInterview.analysis) {
                 setAnalysis({
                   overallScore: dbInterview.analysis.overallScore,
                   verdict: dbInterview.analysis.verdict,
                   overallFeedback: dbInterview.analysis.overallFeedback,
                   skills: [
-                    { name: 'Communication', score: dbInterview.analysis.skills.communicationClarity || 7, emoji: '💬', description: 'Clear explanations', trend: 'neutral' as const },
-                    { name: 'Technical Depth', score: dbInterview.analysis.skills.technicalDepth || 7, emoji: '🧠', description: 'Deep understanding', trend: 'up' as const },
-                    { name: 'Problem Solving', score: dbInterview.analysis.skills.problemFraming || 7, emoji: '🎯', description: 'Analytical approach', trend: 'neutral' as const },
-                    { name: 'Leadership', score: dbInterview.analysis.skills.leadership || 7, emoji: '👥', description: 'Team guidance', trend: 'up' as const },
-                    { name: 'Structure', score: dbInterview.analysis.skills.structure || 7, emoji: '📋', description: 'Organized responses', trend: 'neutral' as const },
+                    { name: 'Communication', score: dbInterview.analysis.skills?.communicationClarity || 7, emoji: '💬', description: 'Clear explanations', trend: 'neutral' as const },
+                    { name: 'Technical Depth', score: dbInterview.analysis.skills?.technicalDepth || 7, emoji: '🧠', description: 'Deep understanding', trend: 'up' as const },
+                    { name: 'Problem Solving', score: dbInterview.analysis.skills?.problemFraming || 7, emoji: '🎯', description: 'Analytical approach', trend: 'neutral' as const },
+                    { name: 'Leadership', score: dbInterview.analysis.skills?.leadership || 7, emoji: '👥', description: 'Team guidance', trend: 'up' as const },
+                    { name: 'Structure', score: dbInterview.analysis.skills?.structure || 7, emoji: '📋', description: 'Organized responses', trend: 'neutral' as const },
                   ],
                   topStrengths: dbInterview.analysis.topStrengths || [],
                   topImprovements: dbInterview.analysis.topImprovements || [],
@@ -107,48 +109,94 @@ export default function ResultsPage({
                     questionNumber: q.questionNumber,
                     questionType: q.questionType,
                     questionText: q.questionText,
-                    score: q.score || 7,
-                    strengths: q.strengths || ['Good response structure'],
-                    improvements: q.improvements || ['Could add more specific examples'],
-                    keyTakeaway: 'Solid answer with room for improvement',
+                    score: q.score || 0,
+                    strengths: q.strengths || [],
+                    improvements: q.improvements || [],
+                    keyTakeaway: q.keyTakeaway || '',
                     transcript: q.transcript || undefined,
                   })),
                 })
               } else {
-                // Generate demo analysis but include real transcripts
-                const demoAnalysis = generateDemoAnalysis({
-                  ...dbInterview,
-                  questions: dbInterview.questions.map((q: any) => ({
-                    ...q,
-                    transcript: q.transcript,
+                // No analysis yet - show pending state with real questions
+                setAnalysis({
+                  overallScore: 0,
+                  verdict: 'Pending Analysis',
+                  overallFeedback: 'Your interview responses are being analyzed. This may take a moment.',
+                  skills: [],
+                  topStrengths: [],
+                  topImprovements: [],
+                  actionItems: [],
+                  questionFeedback: dbInterview.questions.map((q: any) => ({
+                    questionNumber: q.questionNumber,
+                    questionType: q.questionType,
+                    questionText: q.questionText,
+                    score: q.score || 0,
+                    strengths: [],
+                    improvements: [],
+                    keyTakeaway: q.transcript ? 'Response recorded - analysis pending' : 'No response recorded',
+                    transcript: q.transcript || undefined,
                   })),
                 })
-                setAnalysis(demoAnalysis)
               }
               return
             }
+          } else if (response.status === 404) {
+            // Interview not found - redirect to dashboard
+            window.location.href = '/dashboard'
+            return
           }
         } catch (error) {
           console.error('Error fetching interview from API:', error)
         }
+        
+        // Check sessionStorage for in-progress interview (not yet saved to DB)
+        const storedInterview = sessionStorage.getItem(`interview_${id}`)
+        if (storedInterview) {
+          const parsed = JSON.parse(storedInterview)
+          setInterview(parsed)
+          // Show pending analysis for real interviews without DB data
+          setAnalysis({
+            overallScore: 0,
+            verdict: 'Pending Analysis',
+            overallFeedback: 'Complete your interview session to receive AI-powered feedback.',
+            skills: [],
+            topStrengths: [],
+            topImprovements: [],
+            actionItems: [],
+            questionFeedback: (parsed.questions || []).map((q: any) => ({
+              questionNumber: q.questionNumber,
+              questionType: q.questionType,
+              questionText: q.questionText,
+              score: 0,
+              strengths: [],
+              improvements: [],
+              keyTakeaway: 'Complete this question to get feedback',
+              transcript: undefined,
+            })),
+          })
+          return
+        }
+        
+        // Real ID but no data found - redirect to dashboard
+        window.location.href = '/dashboard'
+        return
       }
       
-      // Fallback to sessionStorage (for demo interviews)
+      // Demo mode: show sample data
       const storedInterview = sessionStorage.getItem(`interview_${id}`)
       
       if (storedInterview) {
         const parsed = JSON.parse(storedInterview)
         setInterview(parsed)
-        
-        // Generate demo analysis based on interview data
         const demoAnalysis = generateDemoAnalysis(parsed)
         setAnalysis(demoAnalysis)
       } else {
-        // Fallback demo data
+        // Fallback demo data for demo IDs only
         const demoInterview = {
           id,
           roleDescription: "Senior React Engineer",
           persona: "technical",
+          focusCategory: "technical",
           questions: [
             { questionNumber: 1, questionType: 'technical', questionText: 'Explain the React reconciliation algorithm and how the virtual DOM diffing works.' },
             { questionNumber: 2, questionType: 'technical', questionText: 'How would you optimize the performance of a React application with slow renders?' },
@@ -472,16 +520,31 @@ export default function ResultsPage({
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <p className="text-gray-400 text-sm mb-2">Overall Performance</p>
-              <div className="flex items-baseline gap-2">
-                <span className={`text-6xl font-bold ${getScoreColor(analysis.overallScore)}`}>
-                  {analysis.overallScore.toFixed(1)}
-                </span>
-                <span className="text-2xl text-gray-500">/10</span>
-              </div>
-              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border mt-4 ${getVerdictStyle(analysis.verdict)}`}>
-                <Award className="w-5 h-5" />
-                <span className="font-semibold">{analysis.verdict}</span>
-              </div>
+              {analysis.overallScore > 0 ? (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-6xl font-bold ${getScoreColor(analysis.overallScore)}`}>
+                      {analysis.overallScore.toFixed(1)}
+                    </span>
+                    <span className="text-2xl text-gray-500">/10</span>
+                  </div>
+                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border mt-4 ${getVerdictStyle(analysis.verdict)}`}>
+                    <Award className="w-5 h-5" />
+                    <span className="font-semibold">{analysis.verdict}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold text-gray-500">--</span>
+                    <span className="text-2xl text-gray-600">/10</span>
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border mt-4 bg-gray-500/10 text-gray-400 border-gray-500/50">
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    <span className="font-semibold">{analysis.verdict}</span>
+                  </div>
+                </>
+              )}
             </div>
             <div className="flex-1 max-w-md">
               <p className="text-gray-300 text-sm leading-relaxed">
@@ -492,90 +555,104 @@ export default function ResultsPage({
         </div>
 
         {/* Skills Breakdown */}
-        <div className="glass-card p-6 mb-8 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
-          <h2 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
-            <Brain className="w-5 h-5 text-sunset-coral" />
-            Skills Breakdown
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
-            {analysis.skills.map((skill) => (
-              <div key={skill.name} className="flex items-center gap-4 p-4 glass-card-subtle hover-lift">
-                <span className="text-2xl">{skill.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-white font-medium">{skill.name}</span>
-                    <div className="flex items-center gap-2">
-                      {getTrendIcon(skill.trend)}
-                      <span className={`font-bold ${getScoreColor(skill.score)}`}>
-                        {skill.score}/10
-                      </span>
+        {analysis.skills.length > 0 && (
+          <div className="glass-card p-6 mb-8 animate-fade-in-up" style={{ animationDelay: '150ms' }}>
+            <h2 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-sunset-coral" />
+              Skills Breakdown
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
+              {analysis.skills.map((skill) => (
+                <div key={skill.name} className="flex items-center gap-4 p-4 glass-card-subtle hover-lift">
+                  <span className="text-2xl">{skill.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-white font-medium">{skill.name}</span>
+                      <div className="flex items-center gap-2">
+                        {getTrendIcon(skill.trend)}
+                        <span className={`font-bold ${getScoreColor(skill.score)}`}>
+                          {skill.score}/10
+                        </span>
+                      </div>
                     </div>
+                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-700 ${getScoreBg(skill.score)}`}
+                        style={{ width: `${skill.score * 10}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">{skill.description}</p>
                   </div>
-                  <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-700 ${getScoreBg(skill.score)}`}
-                      style={{ width: `${skill.score * 10}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">{skill.description}</p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Strengths & Improvements */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-          {/* Strengths */}
-          <div className="glass-card !border-green-500/20 p-6">
-            <h2 className="text-xl font-display font-bold text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-400" />
-              💪 Strengths
-            </h2>
-            <ul className="space-y-3 stagger-children">
-              {analysis.topStrengths.map((strength, idx) => (
-                <li key={idx} className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-300 text-sm">{strength}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {(analysis.topStrengths.length > 0 || analysis.topImprovements.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+            {/* Strengths */}
+            <div className="glass-card !border-green-500/20 p-6">
+              <h2 className="text-xl font-display font-bold text-white mb-4 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-green-400" />
+                💪 Strengths
+              </h2>
+              {analysis.topStrengths.length > 0 ? (
+                <ul className="space-y-3 stagger-children">
+                  {analysis.topStrengths.map((strength, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-300 text-sm">{strength}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-sm">Complete your interview to see strengths</p>
+              )}
+            </div>
 
-          {/* Improvements */}
-          <div className="glass-card !border-orange-500/20 p-6">
-            <h2 className="text-xl font-display font-bold text-white mb-4 flex items-center gap-2">
-              <Target className="w-5 h-5 text-orange-400" />
-              📈 Areas to Improve
-            </h2>
-            <ul className="space-y-3 stagger-children">
-              {analysis.topImprovements.map((improvement, idx) => (
-                <li key={idx} className="flex items-start gap-3">
-                  <Zap className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-300 text-sm">{improvement}</span>
-                </li>
-              ))}
-            </ul>
+            {/* Improvements */}
+            <div className="glass-card !border-orange-500/20 p-6">
+              <h2 className="text-xl font-display font-bold text-white mb-4 flex items-center gap-2">
+                <Target className="w-5 h-5 text-orange-400" />
+                📈 Areas to Improve
+              </h2>
+              {analysis.topImprovements.length > 0 ? (
+                <ul className="space-y-3 stagger-children">
+                  {analysis.topImprovements.map((improvement, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <Zap className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-300 text-sm">{improvement}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-sm">Complete your interview to see improvements</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Action Items */}
-        <div className="bg-sunset-coral/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-sunset-coral/20">
-          <h2 className="text-xl font-display font-bold text-white mb-4 flex items-center gap-2">
-            <Zap className="w-5 h-5 text-sunset-coral" />
-            🎯 Action Items for Next Interview
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {analysis.actionItems.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-lg">
-                <span className="w-6 h-6 rounded-full bg-sunset-coral/20 text-sunset-coral text-sm font-bold flex items-center justify-center">
-                  {idx + 1}
-                </span>
-                <span className="text-gray-300 text-sm">{item}</span>
-              </div>
-            ))}
+        {analysis.actionItems.length > 0 && (
+          <div className="bg-sunset-coral/10 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-sunset-coral/20">
+            <h2 className="text-xl font-display font-bold text-white mb-4 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-sunset-coral" />
+              🎯 Action Items for Next Interview
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {analysis.actionItems.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-lg">
+                  <span className="w-6 h-6 rounded-full bg-sunset-coral/20 text-sunset-coral text-sm font-bold flex items-center justify-center">
+                    {idx + 1}
+                  </span>
+                  <span className="text-gray-300 text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Question-by-Question Feedback */}
         <div className="bg-gray-800/30 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-gray-700">
