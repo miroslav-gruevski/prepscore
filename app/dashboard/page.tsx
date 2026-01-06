@@ -9,9 +9,22 @@ interface Interview {
   roleDescription: string
   persona: string
   questionType: string
+  focusCategory?: string
   createdAt: string
   analyzedAt: string
   signalsDetected: { id: string; name: string; score: number }[]
+}
+
+// Focus category display info
+const focusCategoryInfo: Record<string, { emoji: string; label: string }> = {
+  technical: { emoji: '🔧', label: 'Technical' },
+  behavioral: { emoji: '💬', label: 'Behavioral' },
+  leadership: { emoji: '👥', label: 'Leadership' },
+  problem_solving: { emoji: '🧩', label: 'Problem Solving' },
+  soft_skills: { emoji: '🤝', label: 'Soft Skills' },
+  culture_fit: { emoji: '🏢', label: 'Culture Fit' },
+  situational: { emoji: '🎯', label: 'Situational' },
+  mixed: { emoji: '🎲', label: 'Mixed' },
 }
 
 export default function DashboardPage() {
@@ -50,9 +63,10 @@ export default function DashboardPage() {
       // Today
       {
         id: "1",
-        roleDescription: "Senior React Engineer at Series B Startup",
+        roleDescription: "Senior React Developer",
         persona: "technical",
         questionType: "technical",
+        focusCategory: "technical",
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
         analyzedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
         signalsDetected: [
@@ -63,9 +77,10 @@ export default function DashboardPage() {
       },
       {
         id: "2",
-        roleDescription: "Product Manager at Tech Company",
+        roleDescription: "Product Manager",
         persona: "friendly",
         questionType: "behavioral",
+        focusCategory: "leadership",
         createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
         analyzedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
         signalsDetected: [
@@ -76,9 +91,10 @@ export default function DashboardPage() {
       // Yesterday
       {
         id: "3",
-        roleDescription: "Staff Software Engineer at FAANG",
+        roleDescription: "Staff Software Engineer",
         persona: "skeptic",
         questionType: "behavioral",
+        focusCategory: "behavioral",
         createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
         analyzedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
         signalsDetected: [
@@ -89,9 +105,10 @@ export default function DashboardPage() {
       },
       {
         id: "4",
-        roleDescription: "Engineering Manager at Growth Startup",
+        roleDescription: "Engineering Manager",
         persona: "rushed",
         questionType: "leadership",
+        focusCategory: "leadership",
         createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 - 3 * 60 * 60 * 1000).toISOString(),
         analyzedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
         signalsDetected: [
@@ -102,9 +119,10 @@ export default function DashboardPage() {
       // 2 days ago
       {
         id: "5",
-        roleDescription: "Frontend Developer at Agency",
+        roleDescription: "Frontend Developer",
         persona: "technical",
         questionType: "technical",
+        focusCategory: "technical",
         createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
         analyzedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
         signalsDetected: [
@@ -115,9 +133,10 @@ export default function DashboardPage() {
       // 5 days ago
       {
         id: "6",
-        roleDescription: "DevOps Engineer at Enterprise",
+        roleDescription: "DevOps Engineer",
         persona: "technical",
         questionType: "system_design",
+        focusCategory: "problem_solving",
         createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
         analyzedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
         signalsDetected: [
@@ -128,9 +147,10 @@ export default function DashboardPage() {
       // 7 days ago
       {
         id: "7",
-        roleDescription: "UX Designer at Product Studio",
+        roleDescription: "Senior UX Designer",
         persona: "friendly",
         questionType: "behavioral",
+        focusCategory: "soft_skills",
         createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
         analyzedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
         signalsDetected: [
@@ -141,9 +161,10 @@ export default function DashboardPage() {
       // 10 days ago
       {
         id: "8",
-        roleDescription: "Data Scientist at AI Startup",
+        roleDescription: "Data Scientist",
         persona: "skeptic",
         questionType: "technical",
+        focusCategory: "mixed",
         createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
         analyzedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
         signalsDetected: [
@@ -550,12 +571,6 @@ function InterviewCard({
   onDelete: (interview: Interview) => void
   compact?: boolean
 }) {
-  const personaEmojis: Record<string, string> = {
-    technical: '💻',
-    skeptic: '🤨',
-    friendly: '😊',
-    rushed: '⏱️',
-  }
 
   const personaLabels: Record<string, string> = {
     technical: 'Technical',
@@ -588,20 +603,20 @@ function InterviewCard({
   return (
     <div className={`glass-card-subtle hover:border-white/20 transition-all duration-300 hover-lift overflow-visible ${compact ? 'p-4' : 'p-5'} ${isMenuOpen ? 'z-30 relative' : ''}`}>
       <div className="flex items-center gap-4">
-        {/* Persona emoji */}
-        <span className="text-2xl flex-shrink-0">
-          {personaEmojis[interview.persona] || '📋'}
-        </span>
-
         {/* Content */}
         <Link href={`/interview/results/${interview.id}`} className="flex-1 min-w-0 group">
           <h3 className="font-medium text-white group-hover:text-sunset-rose transition-colors duration-200 truncate">
             {interview.roleDescription}
           </h3>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
             <span className="badge text-xs">
               {personaLabels[interview.persona]}
             </span>
+            {interview.focusCategory && focusCategoryInfo[interview.focusCategory] && (
+              <span className="badge text-xs !bg-sunset-coral/10 !text-sunset-coral !border-sunset-coral/20">
+                {focusCategoryInfo[interview.focusCategory].label}
+              </span>
+            )}
             <span className="text-xs text-gray-500 flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {formatTime(interview.createdAt)}

@@ -133,16 +133,15 @@ export default function HomePage() {
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
             {[
-              { step: '1', title: 'Choose Your Role', desc: "Select the position you're interviewing for", icon: '🎯' },
-              { step: '2', title: 'Pick a Persona', desc: 'Choose from 4 interviewer styles', icon: '🎭' },
-              { step: '3', title: 'Practice', desc: 'Record your response to interview questions', icon: '🎥' },
-              { step: '4', title: 'Get Feedback', desc: 'Receive AI-powered analysis and insights', icon: '📈' },
+              { step: '1', title: 'Choose Your Role', desc: "Select the position you're interviewing for" },
+              { step: '2', title: 'Pick a Persona', desc: 'Choose from 4 interviewer styles' },
+              { step: '3', title: 'Practice', desc: 'Record your response to interview questions' },
+              { step: '4', title: 'Get Feedback', desc: 'Receive AI-powered analysis and insights' },
             ].map((item) => (
               <div key={item.step} className="text-center">
                 <div className="w-20 h-20 mx-auto bg-sunset-rose/10 text-sunset-rose rounded-full flex items-center justify-center text-2xl font-display font-bold mb-6 shadow-lg border-2 border-sunset-rose/30">
                   {item.step}
                 </div>
-                <div className="text-4xl mb-4">{item.icon}</div>
                 <h3 className="font-display font-semibold text-white text-lg mb-3">{item.title}</h3>
                 <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
               </div>
@@ -207,29 +206,29 @@ function PersonasIcon() {
           <stop offset="50%" stopColor="#FF8E53" />
           <stop offset="100%" stopColor="#FFA07A" />
         </linearGradient>
-        <linearGradient id="personas-shadow" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#4A1942" />
-          <stop offset="100%" stopColor="#2D1B36" />
-        </linearGradient>
         <filter id="personas-glow">
-          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+          <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
           <feMerge>
             <feMergeNode in="coloredBlur"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
       </defs>
-      {/* Shadow/3D effect */}
-      <ellipse cx="28" cy="50" rx="20" ry="4" fill="url(#personas-shadow)" opacity="0.3"/>
-      {/* Back mask - smaller */}
-      <path d="M42 16C42 16 44 18 44 22C44 26 42 30 38 32C34 34 30 34 30 34L32 38C32 38 40 36 44 30C48 24 48 18 44 14C40 10 34 10 30 12L30 16C30 16 36 14 40 16C42 17 42 16 42 16Z" fill="url(#personas-gradient)" opacity="0.6"/>
-      {/* Main mask */}
       <g filter="url(#personas-glow)">
-        <path d="M12 20C12 12 18 6 28 6C38 6 44 12 44 20C44 28 40 36 34 40C28 44 22 44 22 44L20 50L18 44C18 44 12 44 8 38C4 32 4 24 8 18C12 12 20 10 28 10C28 10 20 10 16 14C12 18 12 24 14 28C16 32 20 34 24 34C24 34 20 32 18 28C16 24 16 20 18 16C20 12 24 10 28 10" stroke="url(#personas-gradient)" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-        {/* Face details */}
-        <circle cx="22" cy="22" r="2.5" fill="url(#personas-gradient)"/>
-        <circle cx="32" cy="22" r="2.5" fill="url(#personas-gradient)"/>
-        <path d="M24 30C24 30 27 33 32 30" stroke="url(#personas-gradient)" strokeWidth="2" strokeLinecap="round" fill="none"/>
+        {/* Center front person - largest */}
+        <circle cx="28" cy="20" r="8" fill="url(#personas-gradient)"/>
+        <path d="M16 44C16 36 21 32 28 32C35 32 40 36 40 44" fill="url(#personas-gradient)"/>
+        
+        {/* Left person - behind */}
+        <circle cx="12" cy="18" r="5" fill="url(#personas-gradient)" opacity="0.6"/>
+        <path d="M4 38C4 32 7 29 12 29C17 29 20 32 20 38" fill="url(#personas-gradient)" opacity="0.6"/>
+        
+        {/* Right person - behind */}
+        <circle cx="44" cy="18" r="5" fill="url(#personas-gradient)" opacity="0.6"/>
+        <path d="M36 38C36 32 39 29 44 29C49 29 52 32 52 38" fill="url(#personas-gradient)" opacity="0.6"/>
+        
+        {/* Back person - smallest, peeking */}
+        <circle cx="28" cy="8" r="4" fill="url(#personas-gradient)" opacity="0.4"/>
       </g>
     </svg>
   )
