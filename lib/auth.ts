@@ -1,8 +1,6 @@
 // NextAuth Configuration with Google OAuth
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { db } from "./db"
 
 // Check if we're in demo mode (no Google credentials)
 const isDemoMode = !process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET
@@ -26,9 +24,8 @@ const demoAuth = {
   },
 }
 
-// Real NextAuth configuration
+// Real NextAuth configuration (JWT-based, no database adapter)
 const nextAuthConfig = NextAuth({
-  adapter: PrismaAdapter(db),
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -37,41 +34,33 @@ const nextAuthConfig = NextAuth({
   ],
   pages: {
     signIn: "/auth/signin",
-    error: "/auth/signin",
   },
   callbacks: {
-    jwt: async ({ token, user, account }) => {
+    jwt: async ({ token, user, account, profile }) => {
       // On initial sign in, add user data to token
-      if (user) {
-        token.id = user.id
-        token.email = user.email
-        token.name = user.name
-        token.picture = user.image
+      if (account && profile) {
+        token.id = profile.sub
+        token.email = profile.email
+        token.name = profile.name
+        token.picture = profile.picture
       }
       return token
     },
     session: async ({ session, token }) => {
       // Pass token data to session
       if (session.user && token) {
-        session.user.id = token.id as string
+        session.user.id = token.id as string || token.sub as string
         session.user.email = token.email as string
         session.user.name = token.name as string
         session.user.image = token.picture as string
       }
       return session
     },
-    redirect: async ({ url, baseUrl }) => {
-      // After sign in, redirect to dashboard
-      if (url.startsWith(baseUrl)) return url
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-      return `${baseUrl}/dashboard`
-    },
   },
   session: {
-    strategy: "jwt", // Use JWT instead of database sessions
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  debug: process.env.NODE_ENV === "development",
 })
 
 // Export based on mode
