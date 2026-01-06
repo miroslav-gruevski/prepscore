@@ -167,7 +167,10 @@ export default function InterviewSessionPage({
         sessionStorage.setItem(`interview_${id}`, JSON.stringify(updatedInterview))
         
         // Upload to Vercel Blob if not a demo interview
-        if (!id.startsWith('demo_')) {
+        const isDemoInterview = id.startsWith('demo_') || id.startsWith('demo-')
+        
+        if (!isDemoInterview) {
+          console.log('[Session] Uploading recording for real interview:', id)
           try {
             const formData = new FormData()
             formData.append('audio', blob, `recording-q${currentQuestion}.webm`)
@@ -181,9 +184,10 @@ export default function InterviewSessionPage({
             
             if (uploadResponse.ok) {
               const uploadData = await uploadResponse.json()
-              console.log('Recording uploaded:', uploadData.url)
+              console.log('[Session] Recording uploaded:', uploadData.url)
               
               // Trigger transcription
+              console.log('[Session] Triggering transcription...')
               const transcribeResponse = await fetch('/api/recordings/transcribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -196,12 +200,18 @@ export default function InterviewSessionPage({
               
               if (transcribeResponse.ok) {
                 const transcribeData = await transcribeResponse.json()
-                console.log('Transcription complete:', transcribeData.transcript?.substring(0, 100))
+                console.log('[Session] Transcription complete:', transcribeData.transcript?.substring(0, 100))
+              } else {
+                console.error('[Session] Transcription failed:', await transcribeResponse.text())
               }
+            } else {
+              console.error('[Session] Upload failed:', await uploadResponse.text())
             }
           } catch (error) {
-            console.error('Error uploading/transcribing recording:', error)
+            console.error('[Session] Error uploading/transcribing recording:', error)
           }
+        } else {
+          console.log('[Session] Demo interview - skipping upload/transcription')
         }
         
         // Update state to mark as uploaded

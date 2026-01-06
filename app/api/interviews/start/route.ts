@@ -74,9 +74,18 @@ export async function POST(request: NextRequest) {
     // Generate 5 questions based on role + persona + focus category
     const questions = generateInterviewQuestions(sanitizedRole, persona, focusCategory)
 
+    // Log authentication status for debugging
+    console.log('[Interview Start] Auth check:', {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      userId: session?.user?.id || 'none',
+      userEmail: session?.user?.email || 'none',
+    })
+
     // If user is authenticated, save to database
     if (session?.user?.id) {
       try {
+        console.log('[Interview Start] Creating interview in database for user:', session.user.id)
         const interview = await db.interview.create({
           data: {
             userId: session.user.id,

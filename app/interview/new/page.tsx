@@ -192,6 +192,13 @@ export default function NewInterviewPage() {
       const data = await response.json()
 
       if (data.success) {
+        // Log if saved to database
+        console.log('[New Interview] Created:', {
+          interviewId: data.interviewId,
+          savedToDatabase: data.savedToDatabase,
+          isDemo: data.interviewId.startsWith('demo_'),
+        })
+
         // Store interview data in sessionStorage for the session page
         sessionStorage.setItem(`interview_${data.interviewId}`, JSON.stringify({
           id: data.interviewId,
@@ -201,6 +208,7 @@ export default function NewInterviewPage() {
           questions: data.questions,
           answers: {},
           startedAt: new Date().toISOString(),
+          savedToDatabase: data.savedToDatabase, // Track if saved to DB
         }))
 
         // Navigate to interview session
