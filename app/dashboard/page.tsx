@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState, useRef } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { TrendingUp, Calendar, Target, Plus, ChevronDown, MoreVertical, Eye, Trash2, Clock, Settings, LogOut, User, HelpCircle, CreditCard, AlertTriangle, X } from 'lucide-react'
 
 interface Interview {
@@ -252,7 +252,10 @@ export default function DashboardPage() {
                       {/* Logout */}
                       <div className="border-t border-white/10 py-2">
                         <button
-                          onClick={() => { setUserMenuOpen(false); alert('Logout clicked - implement auth'); }}
+                          onClick={() => { 
+                            setUserMenuOpen(false); 
+                            signOut({ callbackUrl: '/' }); 
+                          }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-red-400 hover:bg-red-500/10 transition-colors text-sm"
                         >
                           <LogOut className="w-4 h-4" />
