@@ -91,17 +91,21 @@ export default function ResultsPage({
               
               // Use real analysis if available
               if (dbInterview.analysis) {
+                const skills = dbInterview.analysis.skills || {}
                 setAnalysis({
                   overallScore: dbInterview.analysis.overallScore,
                   verdict: dbInterview.analysis.verdict,
                   overallFeedback: dbInterview.analysis.overallFeedback,
                   skills: [
-                    { name: 'Communication', score: dbInterview.analysis.skills?.communicationClarity || 7, emoji: '💬', description: 'Clear explanations', trend: 'neutral' as const },
-                    { name: 'Technical Depth', score: dbInterview.analysis.skills?.technicalDepth || 7, emoji: '🧠', description: 'Deep understanding', trend: 'up' as const },
-                    { name: 'Problem Solving', score: dbInterview.analysis.skills?.problemFraming || 7, emoji: '🎯', description: 'Analytical approach', trend: 'neutral' as const },
-                    { name: 'Leadership', score: dbInterview.analysis.skills?.leadership || 7, emoji: '👥', description: 'Team guidance', trend: 'up' as const },
-                    { name: 'Structure', score: dbInterview.analysis.skills?.structure || 7, emoji: '📋', description: 'Organized responses', trend: 'neutral' as const },
-                  ],
+                    { name: 'Technical Depth', score: skills.technicalDepth || 0, emoji: '🧠', description: 'Domain knowledge and expertise', trend: 'neutral' as const },
+                    { name: 'Problem Framing', score: skills.problemFraming || 0, emoji: '🎯', description: 'Clarifies requirements effectively', trend: 'neutral' as const },
+                    { name: 'Communication', score: skills.communicationClarity || 0, emoji: '💬', description: 'Clear and articulate explanations', trend: 'neutral' as const },
+                    { name: 'Conciseness', score: skills.conciseness || 0, emoji: '⚡', description: 'Focused and to-the-point answers', trend: 'neutral' as const },
+                    { name: 'Structure', score: skills.structure || 0, emoji: '📋', description: 'Organized and logical responses', trend: 'neutral' as const },
+                    { name: 'Confidence', score: skills.confidence || 0, emoji: '💪', description: 'Speaks with conviction', trend: 'neutral' as const },
+                    { name: 'Relevance', score: skills.relevance || 0, emoji: '🎯', description: 'Answers match the question', trend: 'neutral' as const },
+                    { name: 'Leadership', score: skills.leadership || 0, emoji: '👥', description: 'Team guidance and mentorship', trend: 'neutral' as const },
+                  ].filter(s => s.score > 0), // Only show skills that were scored
                   topStrengths: dbInterview.analysis.topStrengths || [],
                   topImprovements: dbInterview.analysis.topImprovements || [],
                   actionItems: dbInterview.analysis.actionItems || [],
@@ -112,7 +116,7 @@ export default function ResultsPage({
                     score: q.score || 0,
                     strengths: q.strengths || [],
                     improvements: q.improvements || [],
-                    keyTakeaway: q.keyTakeaway || '',
+                    keyTakeaway: q.feedback || '', // feedback field stores keyTakeaway
                     transcript: q.transcript || undefined,
                   })),
                 })

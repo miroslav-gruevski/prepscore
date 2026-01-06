@@ -247,13 +247,42 @@ export default function InterviewSessionPage({
     setRecordingTime(0)
   }
 
-  const finishInterview = () => {
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+
+  const finishInterview = async () => {
     if (isRecording) {
       stopRecording()
     }
     
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
+    }
+    
+    // Only trigger AI analysis for real interviews (not demo)
+    const isDemoId = id.startsWith('demo_') || id.startsWith('demo-')
+    
+    if (!isDemoId && answeredQuestions.size > 0) {
+      setIsAnalyzing(true)
+      
+      try {
+        // Wait a moment for any pending transcriptions to complete
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Trigger AI analysis
+        console.log('[Session] Triggering AI analysis...')
+        const analyzeResponse = await fetch(`/api/interviews/${id}/analyze`, {
+          method: 'POST',
+        })
+        
+        if (analyzeResponse.ok) {
+          const analyzeData = await analyzeResponse.json()
+          console.log('[Session] Analysis complete:', analyzeData.analysis?.overallScore)
+        } else {
+          console.error('[Session] Analysis failed:', await analyzeResponse.text())
+        }
+      } catch (error) {
+        console.error('[Session] Error during analysis:', error)
+      }
     }
     
     router.push(`/interview/results/${id}`)
@@ -281,6 +310,25 @@ export default function InterviewSessionPage({
 
   return (
     <div className="min-h-screen gradient-mesh flex flex-col">
+      {/* Analyzing Overlay */}
+      {isAnalyzing && (
+        <div className="fixed inset-0 z-[100] bg-gray-900/90 backdrop-blur-sm flex items-center justify-center">
+          <div className="glass-card p-8 max-w-md text-center">
+            <div className="w-16 h-16 mx-auto mb-6 border-4 border-sunset-coral/30 border-t-sunset-coral rounded-full animate-spin" />
+            <h2 className="text-2xl font-display font-bold text-white mb-3">
+              Analyzing Your Interview
+            </h2>
+            <p className="text-gray-400 mb-4">
+              Our AI is reviewing your responses and generating personalized feedback...
+            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+              <span className="w-2 h-2 bg-sunset-coral rounded-full animate-pulse" />
+              This usually takes 10-15 seconds
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass-header px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -310,12 +358,17 @@ export default function InterviewSessionPage({
             </span>
             <button
               onClick={finishInterview}
-              disabled={answeredQuestions.size === 0}
+              disabled={answeredQuestions.size === 0 || isAnalyzing}
               className={`btn-primary !px-4 !py-2 !rounded-xl text-sm press-effect ${
-                answeredQuestions.size === 0 ? '!opacity-50 !cursor-not-allowed' : ''
+                answeredQuestions.size === 0 || isAnalyzing ? '!opacity-50 !cursor-not-allowed' : ''
               }`}
             >
-              Finish
+              {isAnalyzing ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Analyzing...
+                </span>
+              ) : 'Finish'}
             </button>
           </div>
         </div>

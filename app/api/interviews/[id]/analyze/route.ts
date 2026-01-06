@@ -1,85 +1,212 @@
-// API Route for Interview Analysis with Flexible LLM Provider
+// API Route: Generate AI analysis from interview transcripts
+import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { analyzeInterview, getActiveProvider, isProviderConfigured } from "@/lib/llm-provider"
-import { getSignalsForPersona } from "@/lib/signal-definitions"
-import { NextResponse } from "next/server"
-import { getInterview, updateInterview } from "@/lib/mock-storage"
+import { db } from "@/lib/db"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Check if LLM is configured
-    if (!isProviderConfigured()) {
+    const session = await auth()
+    const { id } = await context.params
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Check for API key
+    if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(
-        { 
-          error: `LLM provider '${getActiveProvider()}' not configured. Please set API key in .env.local` 
-        },
+        { error: "AI provider not configured" },
         { status: 503 }
       )
     }
 
-    const session = await auth()
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // Get interview with questions
+    const interview = await db.interview.findFirst({
+      where: {
+        id,
+        userId: session.user.id,
+      },
+      include: {
+        questions: {
+          orderBy: { questionNumber: "asc" },
+        },
+      },
+    })
+
+    if (!interview) {
+      return NextResponse.json({ error: "Interview not found" }, { status: 404 })
     }
 
-    const { id } = await params
-
-    // Get interview from mock storage
-    const interview = getInterview(id)
-
-    if (!interview || interview.userId !== session.user.email) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 })
-    }
-
-    if (!interview.transcript) {
+    // Check if there are transcripts to analyze
+    const questionsWithTranscripts = interview.questions.filter(q => q.transcript)
+    
+    if (questionsWithTranscripts.length === 0) {
       return NextResponse.json(
-        { error: "No transcript available. Please upload audio first." },
+        { error: "No transcripts available. Please complete recording first." },
         { status: 400 }
       )
     }
 
-    // Get signal definitions for the persona
-    const signals = getSignalsForPersona(interview.persona)
+    // Build the analysis prompt
+    const questionsForAnalysis = questionsWithTranscripts.map(q => ({
+      number: q.questionNumber,
+      type: q.questionType,
+      question: q.questionText,
+      response: q.transcript,
+    }))
 
-    console.log(`[API] Analyzing with ${getActiveProvider()}...`)
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
-    // Analyze with active LLM provider (Gemini, Claude, etc.)
-    const analysis = await analyzeInterview({
-      transcript: interview.transcript,
-      roleDescription: interview.roleDescription,
-      persona: interview.persona,
-      question: interview.question,
-      signals,
+    const prompt = `You are an expert interview coach analyzing a candidate's interview responses.
+
+Role: ${interview.roleDescription}
+Interviewer Style: ${interview.persona}
+
+The candidate answered the following questions:
+
+${questionsForAnalysis.map(q => `
+Question ${q.number} (${q.type}): "${q.question}"
+Response: "${q.response}"
+`).join('\n---\n')}
+
+Please analyze ALL responses and provide comprehensive feedback. Respond ONLY in this exact JSON format:
+
+{
+  "overallScore": <number 1-10>,
+  "verdict": "<Strong Hire|Hire|Lean Hire|Lean No Hire|No Hire>",
+  "overallFeedback": "<2-3 sentences summarizing overall performance>",
+  "skills": {
+    "communicationClarity": <number 1-10>,
+    "technicalDepth": <number 1-10>,
+    "problemFraming": <number 1-10>,
+    "structure": <number 1-10>,
+    "confidence": <number 1-10>,
+    "conciseness": <number 1-10>,
+    "relevance": <number 1-10>,
+    "leadership": <number 1-10>
+  },
+  "topStrengths": ["<strength 1>", "<strength 2>", "<strength 3>", "<strength 4>"],
+  "topImprovements": ["<improvement 1>", "<improvement 2>", "<improvement 3>", "<improvement 4>"],
+  "actionItems": ["<action 1>", "<action 2>", "<action 3>", "<action 4>"],
+  "questionFeedback": [
+    {
+      "questionNumber": <number>,
+      "score": <number 1-10>,
+      "strengths": ["<what they did well>", "<another strength>"],
+      "improvements": ["<area to improve>", "<another improvement>"],
+      "keyTakeaway": "<one sentence summary of feedback>"
+    }
+  ]
+}
+
+Be specific and actionable. Reference actual content from their responses.`
+
+    console.log(`[Analyze] Generating AI analysis for interview ${id}...`)
+    
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      console.error("Failed to parse AI response:", text)
+      throw new Error("Could not parse JSON from AI response")
+    }
+
+    const analysis = JSON.parse(jsonMatch[0])
+    console.log(`[Analyze] AI analysis complete. Score: ${analysis.overallScore}/10`)
+
+    // Save analysis to database
+    await db.interviewAnalysis.upsert({
+      where: { interviewId: id },
+      create: {
+        interviewId: id,
+        overallScore: analysis.overallScore,
+        verdict: analysis.verdict,
+        overallFeedback: analysis.overallFeedback,
+        communicationClarity: analysis.skills?.communicationClarity || 0,
+        technicalDepth: analysis.skills?.technicalDepth || 0,
+        problemFraming: analysis.skills?.problemFraming || 0,
+        structure: analysis.skills?.structure || 0,
+        confidence: analysis.skills?.confidence || 0,
+        conciseness: analysis.skills?.conciseness || 0,
+        relevance: analysis.skills?.relevance || 0,
+        leadership: analysis.skills?.leadership || 0,
+        topStrengths: analysis.topStrengths || [],
+        topImprovements: analysis.topImprovements || [],
+        actionItems: analysis.actionItems || [],
+      },
+      update: {
+        overallScore: analysis.overallScore,
+        verdict: analysis.verdict,
+        overallFeedback: analysis.overallFeedback,
+        communicationClarity: analysis.skills?.communicationClarity || 0,
+        technicalDepth: analysis.skills?.technicalDepth || 0,
+        problemFraming: analysis.skills?.problemFraming || 0,
+        structure: analysis.skills?.structure || 0,
+        confidence: analysis.skills?.confidence || 0,
+        conciseness: analysis.skills?.conciseness || 0,
+        relevance: analysis.skills?.relevance || 0,
+        leadership: analysis.skills?.leadership || 0,
+        topStrengths: analysis.topStrengths || [],
+        topImprovements: analysis.topImprovements || [],
+        actionItems: analysis.actionItems || [],
+      },
     })
 
-    // Save results to mock storage
-    const updated = updateInterview(id, {
-      analyzedAt: new Date().toISOString(),
-      signalsDetected: analysis.signals.map((s: any) => ({
-        id: Math.random().toString(36).substr(2, 9),
-        name: s.name,
-        score: s.score,
-        definition: s.reason,
-      })),
-      strengths: analysis.strengths,
-      improvements: analysis.improvements,
-    })
+    // Update question-level feedback
+    for (const qFeedback of analysis.questionFeedback || []) {
+      const question = interview.questions.find(
+        q => q.questionNumber === qFeedback.questionNumber
+      )
+      if (question) {
+        await db.interviewQuestion.update({
+          where: { id: question.id },
+          data: {
+            score: qFeedback.score,
+            strengths: qFeedback.strengths || [],
+            improvements: qFeedback.improvements || [],
+            feedback: qFeedback.keyTakeaway,
+            status: "analyzed",
+          },
+        })
+      }
+    }
 
-    console.log(`[API] Analysis complete for interview: ${id}`)
+    // Update interview status
+    await db.interview.update({
+      where: { id },
+      data: {
+        status: "analyzed",
+        analyzedAt: new Date(),
+        overallScore: analysis.overallScore,
+      },
+    })
 
     return NextResponse.json({
-      ...updated,
-      nextRecommendation: analysis.nextRecommendation,
+      success: true,
+      analysis: {
+        overallScore: analysis.overallScore,
+        verdict: analysis.verdict,
+        overallFeedback: analysis.overallFeedback,
+        skills: analysis.skills,
+        topStrengths: analysis.topStrengths,
+        topImprovements: analysis.topImprovements,
+        actionItems: analysis.actionItems,
+        questionFeedback: analysis.questionFeedback,
+      },
     })
   } catch (error) {
-    console.error("Analysis error:", error)
+    console.error("Error analyzing interview:", error)
     return NextResponse.json(
       { error: "Failed to analyze interview" },
       { status: 500 }
     )
   }
 }
-
