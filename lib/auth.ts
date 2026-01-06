@@ -40,15 +40,36 @@ const nextAuthConfig = NextAuth({
     error: "/auth/signin",
   },
   callbacks: {
-    session: async ({ session, user }) => {
-      if (session.user) {
-        session.user.id = user.id
+    jwt: async ({ token, user, account }) => {
+      // On initial sign in, add user data to token
+      if (user) {
+        token.id = user.id
+        token.email = user.email
+        token.name = user.name
+        token.picture = user.image
+      }
+      return token
+    },
+    session: async ({ session, token }) => {
+      // Pass token data to session
+      if (session.user && token) {
+        session.user.id = token.id as string
+        session.user.email = token.email as string
+        session.user.name = token.name as string
+        session.user.image = token.picture as string
       }
       return session
     },
+    redirect: async ({ url, baseUrl }) => {
+      // After sign in, redirect to dashboard
+      if (url.startsWith(baseUrl)) return url
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      return `${baseUrl}/dashboard`
+    },
   },
   session: {
-    strategy: "database",
+    strategy: "jwt", // Use JWT instead of database sessions
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   debug: process.env.NODE_ENV === "development",
 })
