@@ -68,20 +68,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchInterviews() {
+      // Wait for session to be determined
+      if (isSessionLoading) return
+      
       try {
-        // Try to fetch from API (works when logged in)
-        const response = await fetch('/api/interviews/user')
-        
-        if (response.ok) {
-          const data = await response.json()
-          if (data.interviews && data.interviews.length > 0) {
-            setInterviews(data.interviews)
+        // If authenticated, fetch real data from API
+        if (isAuthenticated) {
+          const response = await fetch('/api/interviews/user')
+          
+          if (response.ok) {
+            const data = await response.json()
+            // Show real data (even if empty array)
+            setInterviews(data.interviews || [])
             setIsLoading(false)
             return
           }
         }
         
-        // Fallback to demo data if not logged in or no interviews
+        // Demo mode: show sample data
         const mockInterviews: Interview[] = [
           {
             id: "demo-1",
@@ -128,12 +132,13 @@ export default function DashboardPage() {
         setIsLoading(false)
       } catch (error) {
         console.error('Error fetching interviews:', error)
+        setInterviews([])
         setIsLoading(false)
       }
     }
     
     fetchInterviews()
-  }, [session])
+  }, [session, isSessionLoading, isAuthenticated])
 
   const avgScore = interviews.length > 0
     ? interviews.reduce((sum, interview) => {
@@ -364,7 +369,7 @@ export default function DashboardPage() {
               <StatCard
                 icon={TrendingUp}
                 label="Avg Score"
-                value={`${avgScore.toFixed(1)}/10`}
+                value={interviews.length > 0 ? `${avgScore.toFixed(1)}/10` : '-'}
                 iconColor="text-green-400"
               />
             </>
@@ -409,19 +414,31 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : interviews.length === 0 ? (
-            <div className="bg-gray-800/50 rounded-xl p-12 text-center border border-gray-700">
-              <div className="text-5xl mb-4">🎯</div>
+            <div className="glass-card-subtle p-12 text-center">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-sunset-rose/20 to-sunset-coral/20 flex items-center justify-center">
+                <svg className="w-10 h-10 text-sunset-coral" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+              </div>
               <h3 className="text-xl font-display font-semibold text-white mb-2">
-                No interviews yet
+                {isAuthenticated ? `Welcome, ${user?.name?.split(' ')[0] || 'there'}!` : 'No interviews yet'}
               </h3>
-              <p className="text-gray-400 mb-6">
-                Start your first practice interview to get AI-powered feedback
+              <p className="text-gray-400 mb-8 max-w-md mx-auto">
+                {isAuthenticated 
+                  ? "Ready to ace your next interview? Start a practice session and get AI-powered feedback on your responses."
+                  : "Start your first practice interview to get AI-powered feedback"
+                }
               </p>
               <Link href="/interview/new">
-                <button className="px-6 py-3 bg-gradient-to-r from-sunset-rose to-sunset-coral text-white rounded-lg font-medium hover:shadow-lg transition-all">
-                  Get Started
+                <button className="px-8 py-3 bg-gradient-to-r from-sunset-rose to-sunset-coral text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-sunset-rose/25 transition-all press-effect">
+                  Start Your First Interview
                 </button>
               </Link>
+              {isAuthenticated && (
+                <p className="text-gray-500 text-sm mt-4">
+                  Your progress will be saved automatically
+                </p>
+              )}
             </div>
           ) : showAll && groupedInterviews ? (
             // Grouped by day view
