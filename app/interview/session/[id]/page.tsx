@@ -19,9 +19,22 @@ interface InterviewData {
   id: string
   roleDescription: string
   persona: string
+  focusCategory?: string
   questions: Question[]
   answers: Record<number, { duration: number; recorded: boolean }>
   startedAt: string
+}
+
+// Focus category display info
+const focusCategoryInfo: Record<string, { emoji: string; label: string }> = {
+  technical: { emoji: '🔧', label: 'Technical' },
+  behavioral: { emoji: '💬', label: 'Behavioral' },
+  leadership: { emoji: '👥', label: 'Leadership' },
+  problem_solving: { emoji: '🧩', label: 'Problem Solving' },
+  soft_skills: { emoji: '🤝', label: 'Soft Skills' },
+  culture_fit: { emoji: '🏢', label: 'Culture Fit' },
+  situational: { emoji: '🎯', label: 'Situational' },
+  mixed: { emoji: '🎲', label: 'Mixed' },
 }
 
 export default function InterviewSessionPage({
@@ -233,6 +246,14 @@ export default function InterviewSessionPage({
             <span className="hidden sm:inline text-gray-300 text-sm truncate max-w-[150px] lg:max-w-[250px]">
               {interview.roleDescription}
             </span>
+            {interview.focusCategory && focusCategoryInfo[interview.focusCategory] && (
+              <>
+                <span className="hidden md:inline text-gray-500">•</span>
+                <span className="hidden md:inline badge text-xs">
+                  {focusCategoryInfo[interview.focusCategory].emoji} {focusCategoryInfo[interview.focusCategory].label}
+                </span>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <span className="badge badge-primary">

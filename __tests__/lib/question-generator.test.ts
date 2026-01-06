@@ -19,7 +19,7 @@ describe('Question Generator', () => {
 
     it('should have valid question types', () => {
       const questions = generateInterviewQuestions('Data Scientist', 'skeptic')
-      const validTypes = ['technical', 'behavioral', 'system_design', 'leadership', 'problem_solving', 'culture_fit', 'role_specific', 'situational']
+      const validTypes = ['technical', 'behavioral', 'system_design', 'leadership', 'problem_solving', 'culture_fit', 'role_specific', 'situational', 'soft_skills']
       
       questions.forEach(q => {
         expect(validTypes).toContain(q.questionType)
@@ -73,6 +73,39 @@ describe('Question Generator', () => {
       // At least some questions should have valid types
       expect(technicalTypes.length).toBe(5)
       expect(friendlyTypes.length).toBe(5)
+    })
+
+    it('should respect focus category parameter', () => {
+      const leadershipQuestions = generateInterviewQuestions('Manager', 'friendly', 'leadership')
+      
+      expect(leadershipQuestions).toHaveLength(5)
+      
+      // Leadership focus should have mostly leadership questions
+      const leadershipTypes = leadershipQuestions.filter(q => q.questionType === 'leadership')
+      expect(leadershipTypes.length).toBeGreaterThanOrEqual(2)
+    })
+
+    it('should work with all focus categories', () => {
+      const focusCategories = ['technical', 'behavioral', 'leadership', 'problem_solving', 'soft_skills', 'culture_fit', 'situational', 'mixed'] as const
+      
+      focusCategories.forEach(focus => {
+        const questions = generateInterviewQuestions('Engineer', 'technical', focus)
+        expect(questions).toHaveLength(5)
+        questions.forEach(q => {
+          expect(q.questionText).toBeTruthy()
+          expect(q.questionText.length).toBeGreaterThan(10)
+        })
+      })
+    })
+
+    it('should generate soft skills questions when soft_skills focus is selected', () => {
+      const questions = generateInterviewQuestions('Product Manager', 'friendly', 'soft_skills')
+      
+      expect(questions).toHaveLength(5)
+      
+      // Should have soft_skills type questions
+      const softSkillsTypes = questions.filter(q => q.questionType === 'soft_skills')
+      expect(softSkillsTypes.length).toBeGreaterThanOrEqual(2)
     })
   })
 

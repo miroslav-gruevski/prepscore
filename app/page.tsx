@@ -101,17 +101,17 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-children">
             <FeatureCard
-              icon="🎭"
+              icon={<PersonasIcon />}
               title="4 Interviewer Personas"
               description="Practice with Technical, Skeptic, Friendly, and Rushed interviewer styles to prepare for any situation."
             />
             <FeatureCard
-              icon="🤖"
+              icon={<AIAnalysisIcon />}
               title="AI-Powered Analysis"
               description="Get detailed feedback on hiring signals like Problem Framing, Technical Depth, and Communication Clarity."
             />
             <FeatureCard
-              icon="📊"
+              icon={<ProgressIcon />}
               title="Progress Tracking"
               description="Track improvement across 5 dimensions: Clarity, Depth, Pressure Handling, Role Fit, and Visibility."
             />
@@ -187,13 +187,152 @@ export default function HomePage() {
   )
 }
 
-function FeatureCard({ icon, title, description }: { icon: string; title: string; description: string }) {
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
     <div className="glass-card p-8 hover-lift">
-      <div className="text-5xl mb-6">{icon}</div>
+      <div className="mb-6">{icon}</div>
       <h3 className="text-2xl font-display font-semibold text-white mb-4">{title}</h3>
       <p className="text-gray-300 leading-relaxed text-lg">{description}</p>
     </div>
+  )
+}
+
+// Custom 3D-style SVG icons with gradients
+function PersonasIcon() {
+  return (
+    <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="personas-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FF6B6B" />
+          <stop offset="50%" stopColor="#FF8E53" />
+          <stop offset="100%" stopColor="#FFA07A" />
+        </linearGradient>
+        <linearGradient id="personas-shadow" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#4A1942" />
+          <stop offset="100%" stopColor="#2D1B36" />
+        </linearGradient>
+        <filter id="personas-glow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      {/* Shadow/3D effect */}
+      <ellipse cx="28" cy="50" rx="20" ry="4" fill="url(#personas-shadow)" opacity="0.3"/>
+      {/* Back mask - smaller */}
+      <path d="M42 16C42 16 44 18 44 22C44 26 42 30 38 32C34 34 30 34 30 34L32 38C32 38 40 36 44 30C48 24 48 18 44 14C40 10 34 10 30 12L30 16C30 16 36 14 40 16C42 17 42 16 42 16Z" fill="url(#personas-gradient)" opacity="0.6"/>
+      {/* Main mask */}
+      <g filter="url(#personas-glow)">
+        <path d="M12 20C12 12 18 6 28 6C38 6 44 12 44 20C44 28 40 36 34 40C28 44 22 44 22 44L20 50L18 44C18 44 12 44 8 38C4 32 4 24 8 18C12 12 20 10 28 10C28 10 20 10 16 14C12 18 12 24 14 28C16 32 20 34 24 34C24 34 20 32 18 28C16 24 16 20 18 16C20 12 24 10 28 10" stroke="url(#personas-gradient)" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+        {/* Face details */}
+        <circle cx="22" cy="22" r="2.5" fill="url(#personas-gradient)"/>
+        <circle cx="32" cy="22" r="2.5" fill="url(#personas-gradient)"/>
+        <path d="M24 30C24 30 27 33 32 30" stroke="url(#personas-gradient)" strokeWidth="2" strokeLinecap="round" fill="none"/>
+      </g>
+    </svg>
+  )
+}
+
+function AIAnalysisIcon() {
+  return (
+    <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ai-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#00D9FF" />
+          <stop offset="50%" stopColor="#00B4D8" />
+          <stop offset="100%" stopColor="#0096C7" />
+        </linearGradient>
+        <linearGradient id="ai-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#90E0EF" />
+          <stop offset="100%" stopColor="#48CAE4" />
+        </linearGradient>
+        <filter id="ai-glow">
+          <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      {/* Shadow */}
+      <ellipse cx="28" cy="52" rx="18" ry="3" fill="#0A1628" opacity="0.4"/>
+      {/* Robot head */}
+      <g filter="url(#ai-glow)">
+        {/* Antenna */}
+        <circle cx="28" cy="6" r="3" fill="url(#ai-accent)"/>
+        <line x1="28" y1="9" x2="28" y2="14" stroke="url(#ai-gradient)" strokeWidth="2"/>
+        {/* Head */}
+        <rect x="12" y="14" width="32" height="28" rx="6" stroke="url(#ai-gradient)" strokeWidth="2.5" fill="none"/>
+        {/* Eyes */}
+        <rect x="18" y="22" width="8" height="8" rx="2" fill="url(#ai-gradient)"/>
+        <rect x="30" y="22" width="8" height="8" rx="2" fill="url(#ai-gradient)"/>
+        {/* Eye highlights */}
+        <circle cx="20" cy="24" r="1.5" fill="#fff" opacity="0.8"/>
+        <circle cx="32" cy="24" r="1.5" fill="#fff" opacity="0.8"/>
+        {/* Mouth/speaker */}
+        <rect x="20" y="34" width="16" height="4" rx="2" stroke="url(#ai-gradient)" strokeWidth="1.5" fill="none"/>
+        <line x1="24" y1="35" x2="24" y2="37" stroke="url(#ai-accent)" strokeWidth="1.5"/>
+        <line x1="28" y1="35" x2="28" y2="37" stroke="url(#ai-accent)" strokeWidth="1.5"/>
+        <line x1="32" y1="35" x2="32" y2="37" stroke="url(#ai-accent)" strokeWidth="1.5"/>
+        {/* Ears/side panels */}
+        <rect x="6" y="22" width="4" height="12" rx="2" fill="url(#ai-gradient)"/>
+        <rect x="46" y="22" width="4" height="12" rx="2" fill="url(#ai-gradient)"/>
+      </g>
+      {/* Circuit lines */}
+      <path d="M8 46H16L20 42H36L40 46H48" stroke="url(#ai-accent)" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+    </svg>
+  )
+}
+
+function ProgressIcon() {
+  return (
+    <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="progress-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#10B981" />
+          <stop offset="50%" stopColor="#34D399" />
+          <stop offset="100%" stopColor="#6EE7B7" />
+        </linearGradient>
+        <linearGradient id="progress-accent" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FCD34D" />
+          <stop offset="100%" stopColor="#FBBF24" />
+        </linearGradient>
+        <linearGradient id="progress-red" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#EF4444" />
+          <stop offset="100%" stopColor="#F87171" />
+        </linearGradient>
+        <filter id="progress-glow">
+          <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      {/* Shadow */}
+      <ellipse cx="28" cy="52" rx="20" ry="3" fill="#0A1628" opacity="0.4"/>
+      {/* Chart frame */}
+      <g filter="url(#progress-glow)">
+        {/* Y axis */}
+        <line x1="10" y1="8" x2="10" y2="44" stroke="#4B5563" strokeWidth="2" strokeLinecap="round"/>
+        {/* X axis */}
+        <line x1="10" y1="44" x2="50" y2="44" stroke="#4B5563" strokeWidth="2" strokeLinecap="round"/>
+        {/* Bars */}
+        <rect x="14" y="34" width="6" height="10" rx="1" fill="url(#progress-red)"/>
+        <rect x="24" y="26" width="6" height="18" rx="1" fill="url(#progress-accent)"/>
+        <rect x="34" y="16" width="6" height="28" rx="1" fill="url(#progress-gradient)"/>
+        {/* Trend line */}
+        <path d="M17 32L27 24L37 12" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+        {/* Arrow up */}
+        <path d="M37 12L42 8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+        <path d="M42 8L38 8M42 8L42 12" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        {/* Grid lines */}
+        <line x1="10" y1="28" x2="50" y2="28" stroke="#374151" strokeWidth="1" strokeDasharray="2 2" opacity="0.4"/>
+        <line x1="10" y1="18" x2="50" y2="18" stroke="#374151" strokeWidth="1" strokeDasharray="2 2" opacity="0.4"/>
+      </g>
+    </svg>
   )
 }
 

@@ -73,20 +73,21 @@
 /* Font families */
 @layer base {
   .font-display {
-    font-family: var(--font-playfair), serif;
+    font-family: var(--font-barlow), sans-serif;
+    font-weight: 700;
   }
   
   .font-sans {
-    font-family: var(--font-source-sans), sans-serif;
+    font-family: var(--font-barlow), sans-serif;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-playfair), serif;
+    font-family: var(--font-barlow), sans-serif;
     font-weight: 700;
   }
   
   html, body {
-    font-family: var(--font-source-sans), sans-serif;
+    font-family: var(--font-barlow), sans-serif;
     background-color: #0a0f1a;
     color: #f1f5f9;
     overflow-x: hidden;

@@ -25,6 +25,19 @@ export type QuestionType = (typeof QUESTION_TYPES)[number]
 export const PERSONAS = ['technical', 'skeptic', 'friendly', 'rushed'] as const
 export type PersonaType = (typeof PERSONAS)[number]
 
+// Focus Categories for interview questions
+export const FOCUS_CATEGORIES = [
+  'technical',
+  'behavioral', 
+  'leadership',
+  'problem_solving',
+  'soft_skills',
+  'culture_fit',
+  'situational',
+  'mixed',
+] as const
+export type FocusCategoryType = (typeof FOCUS_CATEGORIES)[number]
+
 export const PERSONA_INFO: Record<PersonaType, { label: string; emoji: string; description: string }> = {
   technical: {
     label: 'The Technical',

@@ -3,7 +3,7 @@
 
 import { detectRoleCategory, roleSpecificQuestions } from './job-roles'
 
-export type QuestionType = 'technical' | 'behavioral' | 'situational' | 'leadership' | 'problem_solving' | 'culture_fit'
+export type QuestionType = 'technical' | 'behavioral' | 'situational' | 'leadership' | 'problem_solving' | 'culture_fit' | 'soft_skills'
 
 export interface GeneratedQuestion {
   questionNumber: number
@@ -12,11 +12,33 @@ export interface GeneratedQuestion {
 }
 
 // Persona-specific question mix (which types of questions to ask)
+// Used as fallback when no specific focus category
 const personaQuestionMix: Record<string, QuestionType[]> = {
   technical: ['technical', 'technical', 'situational', 'problem_solving', 'leadership'],
   skeptic: ['technical', 'behavioral', 'problem_solving', 'behavioral', 'situational'],
   friendly: ['behavioral', 'culture_fit', 'behavioral', 'leadership', 'culture_fit'],
   rushed: ['technical', 'behavioral', 'problem_solving', 'leadership', 'culture_fit'],
+}
+
+// Focus category question mixes
+// Each focus category defines what types of questions to generate
+const focusCategoryMix: Record<string, QuestionType[]> = {
+  // Deep dive into role-specific technical questions
+  technical: ['technical', 'technical', 'technical', 'problem_solving', 'situational'],
+  // Past experiences and STAR-format questions
+  behavioral: ['behavioral', 'behavioral', 'behavioral', 'behavioral', 'situational'],
+  // Leadership and team management
+  leadership: ['leadership', 'leadership', 'behavioral', 'leadership', 'situational'],
+  // Analytical and structured problem-solving
+  problem_solving: ['problem_solving', 'problem_solving', 'technical', 'problem_solving', 'situational'],
+  // Communication, collaboration, and interpersonal skills
+  soft_skills: ['soft_skills', 'soft_skills', 'soft_skills', 'behavioral', 'culture_fit'],
+  // Values alignment and team dynamics
+  culture_fit: ['culture_fit', 'culture_fit', 'behavioral', 'culture_fit', 'behavioral'],
+  // Hypothetical scenario-based questions
+  situational: ['situational', 'situational', 'behavioral', 'situational', 'problem_solving'],
+  // Balanced mix of all types
+  mixed: ['technical', 'behavioral', 'leadership', 'problem_solving', 'culture_fit'],
 }
 
 // Generic behavioral questions (work for any role)
@@ -75,6 +97,22 @@ const cultureFitQuestions: string[] = [
   "What does collaboration mean to you?",
   "How do you approach learning new skills or concepts?",
   "What's your definition of success in a role like this?",
+]
+
+// Soft skills / communication questions
+const softSkillsQuestions: string[] = [
+  "Tell me about a time you had to explain a complex concept to someone without technical background.",
+  "How do you handle disagreements with colleagues while maintaining professional relationships?",
+  "Describe a situation where you had to adapt your communication style for different audiences.",
+  "Tell me about a time you successfully mediated a conflict between team members.",
+  "How do you build trust and rapport with new colleagues or clients?",
+  "Describe a time when active listening helped you solve a problem.",
+  "How do you ensure everyone's voice is heard during team discussions?",
+  "Tell me about a time you had to deliver difficult feedback. How did you approach it?",
+  "How do you handle situations where you disagree with a decision but need to support it?",
+  "Describe your approach to giving and receiving constructive criticism.",
+  "Tell me about a time you successfully persuaded someone to change their mind.",
+  "How do you maintain positive relationships with stakeholders who have competing interests?",
 ]
 
 // Situational questions by role category
@@ -258,6 +296,9 @@ function getQuestionsForType(type: QuestionType, roleCategory: string): string[]
     case 'culture_fit':
       return cultureFitQuestions
     
+    case 'soft_skills':
+      return softSkillsQuestions
+    
     default:
       return behavioralQuestions
   }
@@ -272,15 +313,18 @@ function mapToDisplayType(type: QuestionType): QuestionType {
 // Main function to generate 5 questions
 export function generateInterviewQuestions(
   roleDescription: string,
-  persona: string
+  persona: string,
+  focusCategory?: string
 ): GeneratedQuestion[] {
   // Use the comprehensive role detection from job-roles.ts
   const roleCategory = detectRoleCategory(roleDescription)
   
-  console.log(`[Question Generator] Role: "${roleDescription}" -> Category: "${roleCategory}"`)
+  console.log(`[Question Generator] Role: "${roleDescription}" -> Category: "${roleCategory}", Focus: "${focusCategory || 'default'}"`)
   
-  // Get the question mix for this persona
-  const questionMix = personaQuestionMix[persona] || personaQuestionMix.technical
+  // Get the question mix based on focus category (priority) or persona (fallback)
+  const questionMix = focusCategory && focusCategoryMix[focusCategory]
+    ? focusCategoryMix[focusCategory]
+    : personaQuestionMix[persona] || personaQuestionMix.technical
   
   const questions: GeneratedQuestion[] = []
   const usedQuestions = new Set<string>()
@@ -324,6 +368,7 @@ export function getQuestionTypeDisplay(type: QuestionType): { emoji: string; lab
     leadership: { emoji: '👥', label: 'Leadership' },
     problem_solving: { emoji: '🧩', label: 'Problem Solving' },
     culture_fit: { emoji: '🤝', label: 'Culture Fit' },
+    soft_skills: { emoji: '🗣️', label: 'Soft Skills' },
   }
   return displays[type] || { emoji: '❓', label: 'General' }
 }

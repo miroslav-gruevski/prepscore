@@ -35,6 +35,18 @@ interface SkillScore {
   trend: 'up' | 'down' | 'neutral'
 }
 
+// Focus category display info
+const focusCategoryInfo: Record<string, { emoji: string; label: string }> = {
+  technical: { emoji: '🔧', label: 'Technical' },
+  behavioral: { emoji: '💬', label: 'Behavioral' },
+  leadership: { emoji: '👥', label: 'Leadership' },
+  problem_solving: { emoji: '🧩', label: 'Problem Solving' },
+  soft_skills: { emoji: '🤝', label: 'Soft Skills' },
+  culture_fit: { emoji: '🏢', label: 'Culture Fit' },
+  situational: { emoji: '🎯', label: 'Situational' },
+  mixed: { emoji: '🎲', label: 'Mixed' },
+}
+
 interface AnalysisData {
   overallScore: number
   verdict: string
@@ -374,9 +386,19 @@ export default function ResultsPage({
           <h1 className="text-3xl font-display font-bold text-white mb-2">
               {interview.roleDescription}
           </h1>
-          <p className="text-gray-400">
-            {personaInfo.emoji} {personaInfo.label} Interview • {new Date().toLocaleDateString()}
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2 text-gray-400">
+            <span>{personaInfo.emoji} {personaInfo.label}</span>
+            {interview.focusCategory && focusCategoryInfo[interview.focusCategory] && (
+              <>
+                <span>•</span>
+                <span className="badge text-xs">
+                  {focusCategoryInfo[interview.focusCategory].emoji} {focusCategoryInfo[interview.focusCategory].label} Focus
+                </span>
+              </>
+            )}
+            <span>•</span>
+            <span>{new Date().toLocaleDateString()}</span>
+          </div>
         </div>
 
         {/* Overall Score Card */}

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Playfair_Display, Source_Sans_3 } from 'next/font/google'
+import { Barlow } from 'next/font/google'
 import { Providers } from './providers'
 import { SkipLink } from '@/components/ui/skip-link'
 import './globals.css'
@@ -27,16 +27,10 @@ const jsonLd = {
   ],
 }
 
-const playfair = Playfair_Display({
+const barlow = Barlow({
   subsets: ['latin'],
-  variable: '--font-playfair',
-  display: 'swap',
-  preload: true,
-})
-
-const sourceSans = Source_Sans_3({
-  subsets: ['latin'],
-  variable: '--font-source-sans',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-barlow',
   display: 'swap',
   preload: true,
 })
@@ -136,7 +130,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} ${sourceSans.variable}`}>
+    <html lang="en" className={barlow.variable}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />

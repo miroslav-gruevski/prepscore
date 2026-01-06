@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateInterviewQuestions } from '@/lib/question-generator'
 import { checkRateLimit, getIdentifier, getRateLimitHeaders } from '@/lib/rate-limit'
-import { MAX_ROLE_DESCRIPTION_LENGTH, MIN_ROLE_DESCRIPTION_LENGTH, PERSONAS } from '@/lib/constants'
+import { MAX_ROLE_DESCRIPTION_LENGTH, MIN_ROLE_DESCRIPTION_LENGTH, PERSONAS, FOCUS_CATEGORIES } from '@/lib/constants'
 
 // POST /api/interviews/start
 // Creates a new interview with 5 generated questions
@@ -25,12 +25,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { roleDescription, persona } = body
+    const { roleDescription, persona, focusCategory } = body
 
     // Input validation
-    if (!roleDescription || !persona) {
+    if (!roleDescription || !persona || !focusCategory) {
       return NextResponse.json(
-        { error: 'Role description and persona are required' },
+        { error: 'Role description, persona, and focus category are required' },
         { status: 400 }
       )
     }
@@ -53,13 +53,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate focus category
+    if (!FOCUS_CATEGORIES.includes(focusCategory)) {
+      return NextResponse.json(
+        { error: `Invalid focus category. Must be one of: ${FOCUS_CATEGORIES.join(', ')}` },
+        { status: 400 }
+      )
+    }
+
     // Sanitize input (basic XSS prevention)
     const sanitizedRole = roleDescription
       .replace(/[<>]/g, '') // Remove angle brackets
       .trim()
 
-    // Generate 5 questions based on role + persona
-    const questions = generateInterviewQuestions(sanitizedRole, persona)
+    // Generate 5 questions based on role + persona + focus category
+    const questions = generateInterviewQuestions(sanitizedRole, persona, focusCategory)
 
     // Create interview ID (in production, save to database)
     const interviewId = `int_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
