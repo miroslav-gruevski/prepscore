@@ -41,14 +41,29 @@ export async function POST(
       return NextResponse.json({ error: "Interview not found" }, { status: 404 })
     }
 
-    // Check if there are transcripts to analyze
+    // Separate answered and skipped questions
     const questionsWithTranscripts = interview.questions.filter(q => q.transcript)
+    const skippedQuestions = interview.questions.filter(q => !q.transcript)
     
     if (questionsWithTranscripts.length === 0) {
       return NextResponse.json(
         { error: "No transcripts available. Please complete recording first." },
         { status: 400 }
       )
+    }
+
+    // Mark skipped questions in the database
+    for (const skipped of skippedQuestions) {
+      await db.interviewQuestion.update({
+        where: { id: skipped.id },
+        data: {
+          status: "skipped",
+          score: 0,
+          feedback: "This question was skipped",
+          strengths: [],
+          improvements: [],
+        },
+      })
     }
 
     // Build the analysis prompt
@@ -62,10 +77,15 @@ export async function POST(
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
+    // Note about skipped questions in prompt
+    const skippedNote = skippedQuestions.length > 0 
+      ? `\n\nNote: The candidate skipped ${skippedQuestions.length} question(s) (Q${skippedQuestions.map(q => q.questionNumber).join(', Q')}). Consider this when evaluating overall performance.`
+      : ''
+
     const prompt = `You are an expert interview coach analyzing a candidate's interview responses.
 
 Role: ${interview.roleDescription}
-Interviewer Style: ${interview.persona}
+Interviewer Style: ${interview.persona}${skippedNote}
 
 The candidate answered the following questions:
 

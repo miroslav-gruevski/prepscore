@@ -668,21 +668,34 @@ export default function ResultsPage({
             {analysis.questionFeedback.map((qf) => {
               const qInfo = getQuestionTypeDisplay(qf.questionType as any)
               const isExpanded = expandedQuestions.has(qf.questionNumber)
+              const isSkipped = !qf.transcript
+              const hasRealFeedback = qf.strengths.length > 0 || qf.improvements.length > 0
               
               return (
-                <div key={qf.questionNumber} className="border border-gray-700 rounded-xl overflow-hidden">
+                <div key={qf.questionNumber} className={`border rounded-xl overflow-hidden ${isSkipped ? 'border-gray-700/50 opacity-75' : 'border-gray-700'}`}>
                   <button
                     onClick={() => toggleQuestion(qf.questionNumber)}
                     className="w-full flex items-center justify-between p-4 bg-gray-900/50 hover:bg-gray-900/70 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <span className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${getScoreBg(qf.score)} text-white`}>
-                        {qf.score}
-                      </span>
+                      {isSkipped ? (
+                        <span className="w-10 h-10 rounded-full flex items-center justify-center font-bold bg-gray-600 text-gray-400 text-xs">
+                          —
+                        </span>
+                      ) : (
+                        <span className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${getScoreBg(qf.score)} text-white`}>
+                          {qf.score || '?'}
+                        </span>
+                      )}
                       <div className="text-left">
                         <div className="flex items-center gap-2">
                           <span>{qInfo.emoji}</span>
                           <span className="text-white font-medium">Q{qf.questionNumber}: {qInfo.label}</span>
+                          {isSkipped && (
+                            <span className="px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-400">
+                              Skipped
+                            </span>
+                          )}
                         </div>
                         <p className="text-gray-500 text-sm truncate max-w-md">
                           {qf.questionText}
@@ -704,6 +717,16 @@ export default function ResultsPage({
                         <p className="text-gray-300 text-sm">"{qf.questionText}"</p>
                       </div>
                       
+                      {/* Skipped Notice */}
+                      {isSkipped && (
+                        <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-600/50 text-center">
+                          <div className="text-gray-500 text-sm">
+                            <span className="text-2xl mb-2 block">⏭️</span>
+                            This question was skipped. No response was recorded.
+                          </div>
+                        </div>
+                      )}
+                      
                       {/* Transcript - Your Response */}
                       {qf.transcript && (
                         <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-600/50">
@@ -720,38 +743,50 @@ export default function ResultsPage({
                         </div>
                       )}
                       
-                      {/* Feedback Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-3 bg-green-500/5 rounded-lg border border-green-500/20">
-                          <h4 className="text-green-400 text-sm font-medium mb-2 flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4" />
-                            What You Did Well
-                          </h4>
-                          <ul className="space-y-1">
-                            {qf.strengths.map((s, i) => (
-                              <li key={i} className="text-gray-400 text-sm">• {s}</li>
-                            ))}
-                          </ul>
+                      {/* Feedback Grid - Only show if there's real feedback */}
+                      {hasRealFeedback && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="p-3 bg-green-500/5 rounded-lg border border-green-500/20">
+                            <h4 className="text-green-400 text-sm font-medium mb-2 flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4" />
+                              What You Did Well
+                            </h4>
+                            {qf.strengths.length > 0 ? (
+                              <ul className="space-y-1">
+                                {qf.strengths.map((s, i) => (
+                                  <li key={i} className="text-gray-400 text-sm">• {s}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-gray-500 text-sm italic">No specific strengths noted</p>
+                            )}
+                          </div>
+                          <div className="p-3 bg-orange-500/5 rounded-lg border border-orange-500/20">
+                            <h4 className="text-orange-400 text-sm font-medium mb-2 flex items-center gap-2">
+                              <Zap className="w-4 h-4" />
+                              Room for Improvement
+                            </h4>
+                            {qf.improvements.length > 0 ? (
+                              <ul className="space-y-1">
+                                {qf.improvements.map((imp, i) => (
+                                  <li key={i} className="text-gray-400 text-sm">• {imp}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-gray-500 text-sm italic">No specific improvements noted</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="p-3 bg-orange-500/5 rounded-lg border border-orange-500/20">
-                          <h4 className="text-orange-400 text-sm font-medium mb-2 flex items-center gap-2">
-                            <Zap className="w-4 h-4" />
-                            Room for Improvement
-                          </h4>
-                          <ul className="space-y-1">
-                            {qf.improvements.map((imp, i) => (
-                              <li key={i} className="text-gray-400 text-sm">• {imp}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
+                      )}
                       
-                      {/* Key Takeaway */}
-                      <div className="p-3 bg-sunset-coral/10 rounded-lg border border-sunset-coral/20">
-                        <p className="text-sunset-coral text-sm">
-                          💡 <strong>Key Takeaway:</strong> {qf.keyTakeaway}
-                        </p>
-                      </div>
+                      {/* Key Takeaway - Only show if there's a real takeaway */}
+                      {qf.keyTakeaway && !isSkipped && (
+                        <div className="p-3 bg-sunset-coral/10 rounded-lg border border-sunset-coral/20">
+                          <p className="text-sunset-coral text-sm">
+                            💡 <strong>Key Takeaway:</strong> {qf.keyTakeaway}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
