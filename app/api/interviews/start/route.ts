@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateInterviewQuestions } from '@/lib/question-generator'
 import { checkRateLimit, getIdentifier, getRateLimitHeaders } from '@/lib/rate-limit'
 import { MAX_ROLE_DESCRIPTION_LENGTH, MIN_ROLE_DESCRIPTION_LENGTH, PERSONAS, FOCUS_CATEGORIES } from '@/lib/constants'
+import { auth } from '@/lib/auth'
+import { db } from '@/lib/db'
 
 // POST /api/interviews/start
 // Creates a new interview with 5 generated questions
 export async function POST(request: NextRequest) {
   try {
+    // Get user session
+    const session = await auth()
+    
     // Rate limiting
     const identifier = getIdentifier(request)
     const rateLimitResult = checkRateLimit(identifier, 20, 60) // 20 requests per minute
@@ -69,40 +74,65 @@ export async function POST(request: NextRequest) {
     // Generate 5 questions based on role + persona + focus category
     const questions = generateInterviewQuestions(sanitizedRole, persona, focusCategory)
 
-    // Create interview ID (in production, save to database)
-    const interviewId = `int_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    // If user is authenticated, save to database
+    if (session?.user?.id) {
+      try {
+        const interview = await db.interview.create({
+          data: {
+            userId: session.user.id,
+            roleDescription: sanitizedRole,
+            persona,
+            status: 'in_progress',
+            questionsCount: questions.length,
+            startedAt: new Date(),
+            questions: {
+              create: questions.map(q => ({
+                questionNumber: q.questionNumber,
+                questionType: q.questionType,
+                questionText: q.questionText,
+                status: 'pending',
+              }))
+            }
+          },
+          include: { questions: true }
+        })
 
-    // In demo mode, we'll store in session storage on client
-    // In production, you would save to database here:
-    /*
-    const interview = await prisma.interview.create({
-      data: {
-        id: interviewId,
-        userId: session.user.id,
-        roleDescription: sanitizedRole,
-        persona,
-        status: 'in_progress',
-        questions: {
-          create: questions.map(q => ({
-            questionNumber: q.questionNumber,
-            questionType: q.questionType,
-            questionText: q.questionText,
-            status: 'pending',
-          }))
-        }
-      },
-      include: { questions: true }
-    })
-    */
+        return NextResponse.json(
+          {
+            success: true,
+            interviewId: interview.id,
+            roleDescription: sanitizedRole,
+            persona,
+            focusCategory,
+            questions: interview.questions.map(q => ({
+              questionNumber: q.questionNumber,
+              questionType: q.questionType,
+              questionText: q.questionText,
+            })),
+            savedToDatabase: true,
+          },
+          {
+            headers: getRateLimitHeaders(rateLimitResult)
+          }
+        )
+      } catch (dbError) {
+        console.error('Database error, falling back to demo mode:', dbError)
+        // Fall through to demo mode if DB fails
+      }
+    }
 
-    // Return with rate limit headers
+    // Demo mode: generate ID without saving to database
+    const interviewId = `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
     return NextResponse.json(
       {
         success: true,
         interviewId,
         roleDescription: sanitizedRole,
         persona,
+        focusCategory,
         questions,
+        savedToDatabase: false,
       },
       {
         headers: getRateLimitHeaders(rateLimitResult)
@@ -116,4 +146,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

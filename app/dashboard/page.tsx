@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState, useRef } from 'react'
+import { useSession } from 'next-auth/react'
 import { TrendingUp, Calendar, Target, Plus, ChevronDown, MoreVertical, Eye, Trash2, Clock, Settings, LogOut, User, HelpCircle, CreditCard, AlertTriangle, X } from 'lucide-react'
 
 interface Interview {
@@ -34,10 +35,12 @@ export default function DashboardPage() {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; interview: Interview | null }>({ open: false, interview: null })
-  const [user] = useState({
-    name: "Test User",
-    email: "test@example.com",
-  })
+  const { data: session } = useSession()
+  const user = {
+    name: session?.user?.name || "Demo User",
+    email: session?.user?.email || "demo@prepscore.app",
+    image: session?.user?.image || null,
+  }
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   // Close user menu when clicking outside
@@ -58,127 +61,73 @@ export default function DashboardPage() {
   }, [userMenuOpen])
 
   useEffect(() => {
-    // Mock data with more items across different days
-    const mockInterviews: Interview[] = [
-      // Today
-      {
-        id: "1",
-        roleDescription: "Senior React Developer",
-        persona: "technical",
-        questionType: "technical",
-        focusCategory: "technical",
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-        analyzedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        signalsDetected: [
-          { id: "1", name: "Problem Framing", score: 8 },
-          { id: "2", name: "Technical Depth", score: 7 },
-          { id: "3", name: "Code Quality", score: 9 },
-        ],
-      },
-      {
-        id: "2",
-        roleDescription: "Product Manager",
-        persona: "friendly",
-        questionType: "behavioral",
-        focusCategory: "leadership",
-        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
-        analyzedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-        signalsDetected: [
-          { id: "4", name: "Communication", score: 8 },
-          { id: "5", name: "Strategic Thinking", score: 9 },
-        ],
-      },
-      // Yesterday
-      {
-        id: "3",
-        roleDescription: "Staff Software Engineer",
-        persona: "skeptic",
-        questionType: "behavioral",
-        focusCategory: "behavioral",
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        analyzedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        signalsDetected: [
-          { id: "6", name: "Composure Under Pressure", score: 6 },
-          { id: "7", name: "Evidence-Based Reasoning", score: 8 },
-          { id: "8", name: "Receptiveness", score: 7 },
-        ],
-      },
-      {
-        id: "4",
-        roleDescription: "Engineering Manager",
-        persona: "rushed",
-        questionType: "leadership",
-        focusCategory: "leadership",
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 - 3 * 60 * 60 * 1000).toISOString(),
-        analyzedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        signalsDetected: [
-          { id: "9", name: "Leadership", score: 7 },
-          { id: "10", name: "Decision Making", score: 8 },
-        ],
-      },
-      // 2 days ago
-      {
-        id: "5",
-        roleDescription: "Frontend Developer",
-        persona: "technical",
-        questionType: "technical",
-        focusCategory: "technical",
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        analyzedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        signalsDetected: [
-          { id: "11", name: "CSS Architecture", score: 9 },
-          { id: "12", name: "React Patterns", score: 8 },
-        ],
-      },
-      // 5 days ago
-      {
-        id: "6",
-        roleDescription: "DevOps Engineer",
-        persona: "technical",
-        questionType: "system_design",
-        focusCategory: "problem_solving",
-        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        analyzedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        signalsDetected: [
-          { id: "13", name: "Infrastructure", score: 7 },
-          { id: "14", name: "Automation", score: 8 },
-        ],
-      },
-      // 7 days ago
-      {
-        id: "7",
-        roleDescription: "Senior UX Designer",
-        persona: "friendly",
-        questionType: "behavioral",
-        focusCategory: "soft_skills",
-        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        analyzedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        signalsDetected: [
-          { id: "15", name: "Design Thinking", score: 9 },
-          { id: "16", name: "User Empathy", score: 8 },
-        ],
-      },
-      // 10 days ago
-      {
-        id: "8",
-        roleDescription: "Data Scientist",
-        persona: "skeptic",
-        questionType: "technical",
-        focusCategory: "mixed",
-        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        analyzedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        signalsDetected: [
-          { id: "17", name: "ML Fundamentals", score: 8 },
-          { id: "18", name: "Statistical Rigor", score: 7 },
-        ],
-      },
-    ]
-    // Simulate API loading time
-    setTimeout(() => {
-      setInterviews(mockInterviews)
-      setIsLoading(false)
-    }, 800)
-  }, [])
+    async function fetchInterviews() {
+      try {
+        // Try to fetch from API (works when logged in)
+        const response = await fetch('/api/interviews/user')
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.interviews && data.interviews.length > 0) {
+            setInterviews(data.interviews)
+            setIsLoading(false)
+            return
+          }
+        }
+        
+        // Fallback to demo data if not logged in or no interviews
+        const mockInterviews: Interview[] = [
+          {
+            id: "demo-1",
+            roleDescription: "Senior React Developer",
+            persona: "technical",
+            questionType: "technical",
+            focusCategory: "technical",
+            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            analyzedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            signalsDetected: [
+              { id: "1", name: "Problem Framing", score: 8 },
+              { id: "2", name: "Technical Depth", score: 7 },
+              { id: "3", name: "Code Quality", score: 9 },
+            ],
+          },
+          {
+            id: "demo-2",
+            roleDescription: "Product Manager",
+            persona: "friendly",
+            questionType: "behavioral",
+            focusCategory: "leadership",
+            createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+            analyzedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+            signalsDetected: [
+              { id: "4", name: "Communication", score: 8 },
+              { id: "5", name: "Strategic Thinking", score: 9 },
+            ],
+          },
+          {
+            id: "demo-3",
+            roleDescription: "Staff Software Engineer",
+            persona: "skeptic",
+            questionType: "behavioral",
+            focusCategory: "behavioral",
+            createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            analyzedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+            signalsDetected: [
+              { id: "6", name: "Composure Under Pressure", score: 6 },
+              { id: "7", name: "Evidence-Based Reasoning", score: 8 },
+            ],
+          },
+        ]
+        setInterviews(mockInterviews)
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Error fetching interviews:', error)
+        setIsLoading(false)
+      }
+    }
+    
+    fetchInterviews()
+  }, [session])
 
   const avgScore = interviews.length > 0
     ? interviews.reduce((sum, interview) => {

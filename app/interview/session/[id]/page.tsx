@@ -149,7 +149,7 @@ export default function InterviewSessionPage({
       }
     }
     
-    mediaRecorder.onstop = () => {
+    mediaRecorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: 'video/webm' })
       console.log('Recording completed:', blob.size, 'bytes')
       
@@ -160,11 +160,60 @@ export default function InterviewSessionPage({
           ...interview,
           answers: {
             ...interview.answers,
-            [currentQuestion]: { duration: recordingTime, recorded: true }
+            [currentQuestion]: { duration: recordingTime, recorded: true, uploading: true }
           }
         }
         setInterview(updatedInterview)
         sessionStorage.setItem(`interview_${id}`, JSON.stringify(updatedInterview))
+        
+        // Upload to Vercel Blob if not a demo interview
+        if (!id.startsWith('demo_')) {
+          try {
+            const formData = new FormData()
+            formData.append('audio', blob, `recording-q${currentQuestion}.webm`)
+            formData.append('interviewId', id)
+            formData.append('questionNumber', currentQuestion.toString())
+            
+            const uploadResponse = await fetch('/api/recordings/upload', {
+              method: 'POST',
+              body: formData,
+            })
+            
+            if (uploadResponse.ok) {
+              const uploadData = await uploadResponse.json()
+              console.log('Recording uploaded:', uploadData.url)
+              
+              // Trigger transcription
+              const transcribeResponse = await fetch('/api/recordings/transcribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  interviewId: id,
+                  questionNumber: currentQuestion,
+                  audioUrl: uploadData.url,
+                }),
+              })
+              
+              if (transcribeResponse.ok) {
+                const transcribeData = await transcribeResponse.json()
+                console.log('Transcription complete:', transcribeData.transcript?.substring(0, 100))
+              }
+            }
+          } catch (error) {
+            console.error('Error uploading/transcribing recording:', error)
+          }
+        }
+        
+        // Update state to mark as uploaded
+        const finalInterview = {
+          ...updatedInterview,
+          answers: {
+            ...updatedInterview.answers,
+            [currentQuestion]: { duration: recordingTime, recorded: true, uploading: false }
+          }
+        }
+        setInterview(finalInterview)
+        sessionStorage.setItem(`interview_${id}`, JSON.stringify(finalInterview))
       }
     }
     

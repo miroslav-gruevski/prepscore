@@ -70,33 +70,99 @@ export default function ResultsPage({
   const [selectedAmount, setSelectedAmount] = useState(5)
 
   useEffect(() => {
-    // Load interview data from sessionStorage
-    const storedInterview = sessionStorage.getItem(`interview_${id}`)
-    
-    if (storedInterview) {
-      const parsed = JSON.parse(storedInterview)
-      setInterview(parsed)
-      
-      // Generate demo analysis based on interview data
-      const demoAnalysis = generateDemoAnalysis(parsed)
-      setAnalysis(demoAnalysis)
-    } else {
-      // Fallback demo data
-      const demoInterview = {
-        id,
-        roleDescription: "Senior React Engineer",
-        persona: "technical",
-        questions: [
-          { questionNumber: 1, questionType: 'technical', questionText: 'Explain the React reconciliation algorithm and how the virtual DOM diffing works.' },
-          { questionNumber: 2, questionType: 'technical', questionText: 'How would you optimize the performance of a React application with slow renders?' },
-          { questionNumber: 3, questionType: 'system_design', questionText: 'Design a real-time notification system that can handle millions of users.' },
-          { questionNumber: 4, questionType: 'behavioral', questionText: 'Tell me about a time you had to resolve a conflict within your team.' },
-          { questionNumber: 5, questionType: 'leadership', questionText: 'How do you approach mentoring junior developers on your team?' },
-        ],
+    async function loadInterviewData() {
+      // First try to fetch from API (for real interviews)
+      if (!id.startsWith('demo_')) {
+        try {
+          const response = await fetch(`/api/interviews/${id}/results`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.interview) {
+              const dbInterview = data.interview
+              setInterview({
+                id: dbInterview.id,
+                roleDescription: dbInterview.roleDescription,
+                persona: dbInterview.persona,
+                focusCategory: dbInterview.questions[0]?.questionType || 'mixed',
+                questions: dbInterview.questions,
+              })
+              
+              // Use real analysis if available, otherwise generate demo
+              if (dbInterview.analysis) {
+                setAnalysis({
+                  overallScore: dbInterview.analysis.overallScore,
+                  verdict: dbInterview.analysis.verdict,
+                  overallFeedback: dbInterview.analysis.overallFeedback,
+                  skills: [
+                    { name: 'Communication', score: dbInterview.analysis.skills.communicationClarity || 7, emoji: '💬', description: 'Clear explanations', trend: 'neutral' as const },
+                    { name: 'Technical Depth', score: dbInterview.analysis.skills.technicalDepth || 7, emoji: '🧠', description: 'Deep understanding', trend: 'up' as const },
+                    { name: 'Problem Solving', score: dbInterview.analysis.skills.problemFraming || 7, emoji: '🎯', description: 'Analytical approach', trend: 'neutral' as const },
+                    { name: 'Leadership', score: dbInterview.analysis.skills.leadership || 7, emoji: '👥', description: 'Team guidance', trend: 'up' as const },
+                    { name: 'Structure', score: dbInterview.analysis.skills.structure || 7, emoji: '📋', description: 'Organized responses', trend: 'neutral' as const },
+                  ],
+                  topStrengths: dbInterview.analysis.topStrengths || [],
+                  topImprovements: dbInterview.analysis.topImprovements || [],
+                  actionItems: dbInterview.analysis.actionItems || [],
+                  questionFeedback: dbInterview.questions.map((q: any) => ({
+                    questionNumber: q.questionNumber,
+                    questionType: q.questionType,
+                    questionText: q.questionText,
+                    score: q.score || 7,
+                    strengths: q.strengths || ['Good response structure'],
+                    improvements: q.improvements || ['Could add more specific examples'],
+                    keyTakeaway: 'Solid answer with room for improvement',
+                    transcript: q.transcript || undefined,
+                  })),
+                })
+              } else {
+                // Generate demo analysis but include real transcripts
+                const demoAnalysis = generateDemoAnalysis({
+                  ...dbInterview,
+                  questions: dbInterview.questions.map((q: any) => ({
+                    ...q,
+                    transcript: q.transcript,
+                  })),
+                })
+                setAnalysis(demoAnalysis)
+              }
+              return
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching interview from API:', error)
+        }
       }
-      setInterview(demoInterview)
-      setAnalysis(generateDemoAnalysis(demoInterview))
+      
+      // Fallback to sessionStorage (for demo interviews)
+      const storedInterview = sessionStorage.getItem(`interview_${id}`)
+      
+      if (storedInterview) {
+        const parsed = JSON.parse(storedInterview)
+        setInterview(parsed)
+        
+        // Generate demo analysis based on interview data
+        const demoAnalysis = generateDemoAnalysis(parsed)
+        setAnalysis(demoAnalysis)
+      } else {
+        // Fallback demo data
+        const demoInterview = {
+          id,
+          roleDescription: "Senior React Engineer",
+          persona: "technical",
+          questions: [
+            { questionNumber: 1, questionType: 'technical', questionText: 'Explain the React reconciliation algorithm and how the virtual DOM diffing works.' },
+            { questionNumber: 2, questionType: 'technical', questionText: 'How would you optimize the performance of a React application with slow renders?' },
+            { questionNumber: 3, questionType: 'system_design', questionText: 'Design a real-time notification system that can handle millions of users.' },
+            { questionNumber: 4, questionType: 'behavioral', questionText: 'Tell me about a time you had to resolve a conflict within your team.' },
+            { questionNumber: 5, questionType: 'leadership', questionText: 'How do you approach mentoring junior developers on your team?' },
+          ],
+        }
+        setInterview(demoInterview)
+        setAnalysis(generateDemoAnalysis(demoInterview))
+      }
     }
+    
+    loadInterviewData()
   }, [id])
 
   // Generate demo analysis (in production, this comes from AI)
