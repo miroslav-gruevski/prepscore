@@ -2,43 +2,19 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 
-// Check if we're in demo mode (no Google credentials)
-const isDemoMode = !process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET
-
-// Demo mode auth (for testing without OAuth)
-const demoAuth = {
-  auth: async () => ({
-    user: {
-      id: "demo-user-1",
-      email: "demo@prepscore.app",
-      name: "Demo User",
-      image: null,
-    },
-    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-  }),
-  signIn: async () => true,
-  signOut: async () => true,
-  handlers: {
-    GET: async () => new Response("Demo mode - OAuth disabled", { status: 200 }),
-    POST: async () => new Response("Demo mode - OAuth disabled", { status: 200 }),
-  },
-}
-
-// Real NextAuth configuration (JWT-based, no database adapter)
-const nextAuthConfig = NextAuth({
+export const { auth, handlers, signIn, signOut } = NextAuth({
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     }),
   ],
   pages: {
     signIn: "/auth/signin",
   },
   callbacks: {
-    jwt: async ({ token, user, account, profile }) => {
-      // On initial sign in, add user data to token
-      if (account && profile) {
+    jwt: async ({ token, profile }) => {
+      if (profile) {
         token.id = profile.sub
         token.email = profile.email
         token.name = profile.name
@@ -47,21 +23,19 @@ const nextAuthConfig = NextAuth({
       return token
     },
     session: async ({ session, token }) => {
-      // Pass token data to session
       if (session.user && token) {
-        session.user.id = token.id as string || token.sub as string
-        session.user.email = token.email as string
-        session.user.name = token.name as string
-        session.user.image = token.picture as string
+        session.user.id = (token.id || token.sub) as string
       }
       return session
+    },
+    authorized: async ({ auth }) => {
+      // Allow access to all routes (we'll handle protection in pages)
+      return true
     },
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
+  trustHost: true,
 })
-
-// Export based on mode
-export const { auth, signIn, signOut, handlers } = isDemoMode ? demoAuth as any : nextAuthConfig
